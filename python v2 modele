@@ -1,0 +1,115 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from mpl_toolkits.mplot3d import Axes3D
+
+TempsTotal = 50  #temps simulation
+
+#paramètres à confirmer plaque dimension
+Lx, Ly = 100e-3, 50e-3  #dimensions plaque en m
+Nx, Ny = 50, 25  #nb elements
+dx, dy = Lx / Nx, Ly / Ny  #le pas
+epaisseur = 1.5e-3  #épaisseur plaque en m
+
+#propriétés matériau
+k = 205  #conductivité thermique en W/m·K
+rho = 2700  #densité en kg/m^3
+cp = 900  #chaleur spécifique en J/kg·K
+alpha = k / (rho * cp)  #diffusivité thermique m^2/s
+
+
+h_conv = 20  #coeff de convection en W/m^2·K
+
+Temp_ambiante = 273 + 20  #température ambiante en K
+
+#Cond. stabilité CFL pour stabilité numérique
+dt = min(dx**2, dy**2) / (4 * alpha)
+Nt = int(TempsTotal / dt)  #nb d'itérations temporelles
+
+#C.I.
+Temp_init = 298  #25 Celcius
+T = np.full((Nx, Ny), Temp_init)  #champ température init.
+Temp_nouvelle = np.zeros_like(T)
+
+# Position capteurs (à ajuster)
+laser_x, laser_y = Nx // 10, Ny // 10
+milieu_x, milieu_y = Nx // 2, Ny // 2
+actuateur_x, actuateur_y = 3 * Nx // 4, 3 * Ny // 4
+
+#source de chaleur ponctuelle
+Pin = 500  #puissance totale en W
+P = np.zeros((Nx, Ny))
+P[laser_x, laser_y] = Pin / (dx * dy)  #source ponctuelle
+
+
+
+temperature_laser = np.zeros(Nt)
+temperature_milieu = np.zeros(Nt)
+temperature_actuateur = np.zeros(Nt)
+
+#grilles
+x = np.linspace(0, Lx * 1e3, Nx)  #m en mm
+y = np.linspace(0, Ly * 1e3, Ny)
+X, Y = np.meshgrid(x, y)
+
+
+fig = plt.figure(figsize=(12, 5))
+ax1 = fig.add_subplot(121, projection='3d')  #température 3D
+ax2 = fig.add_subplot(122)  #température laser, milieu, actuateur (comme exemple diapo. présentation projet)
+
+def update_temp():
+    global T, Temp_nouvelle
+    for i in range(1, Nx - 1):
+        for j in range(1, Ny - 1):
+            #discrétisation eq. diff. en différences finies
+            Temp_nouvelle[i, j] = T[i, j] + alpha * dt * (
+                (T[i + 1, j] - 2 * T[i, j] + T[i - 1, j]) / dx**2 +
+                (T[i, j + 1] - 2 * T[i, j] + T[i, j - 1]) / dy**2
+            ) + dt * P[i, j] / (rho * cp)
+
+    #Cond. lim de convection (bords de la plaque)
+    for i in range(Nx):
+        for j in range(Ny):
+            if i == 0 or i == Nx - 1 or j == 0 or j == Ny - 1:
+                Temp_nouvelle[i, j] += dt / (rho * cp) * h_conv * (Temp_ambiante - T[i, j]) / epaisseur
+
+    T[:, :] = Temp_nouvelle[:, :]
+
+def update(frame):
+    update_temp()
+    
+
+    temperature_laser[frame] = T[laser_x, laser_y]
+    temperature_milieu[frame] = T[milieu_x, milieu_y]
+    temperature_actuateur[frame] = T[actuateur_x, actuateur_y]
+
+    ax1.clear()
+    ax2.clear()
+    
+   
+    ax1.plot_surface(X, Y, T.T, cmap='PuRd')
+    ax1.set_xlabel("X position [mm]")
+    ax1.set_ylabel("Y position [mm]")
+    ax1.set_zlabel("Température (K)")
+    ax1.set_title(f"Distribution de température à t = {frame * dt:.4f} s")
+
+    
+    time_vector = np.arange(frame) * dt
+    ax2.plot(time_vector, temperature_laser[:frame] - 273, label="Au laser")
+    ax2.plot(time_vector, temperature_milieu[:frame] - 273, label="Au milieu")
+    ax2.plot(time_vector, temperature_actuateur[:frame] - 273, label="À l'actuateur")
+    
+    ax2.set_xlabel("Temps [s]")
+    ax2.set_ylabel("Température [°C]")
+    ax2.legend()
+    ax2.set_xlim([0, TempsTotal])
+    ax2.set_ylim([20, 35])
+    ax2.grid(True)
+
+
+video = animation.FuncAnimation(fig, update, frames=Nt, repeat=False)
+
+
+video.save('TemperatureDistribution2D.mp4', writer='ffmpeg', fps=30, extra_args=['-vcodec', 'libx264', '-pix_fmt', 'yuv420p'])
+
+plt.show()
