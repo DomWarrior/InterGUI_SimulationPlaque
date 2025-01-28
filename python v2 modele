@@ -16,7 +16,7 @@ k = 205  #conductivité thermique en W/m·K
 rho = 2700  #densité en kg/m^3
 cp = 900  #chaleur spécifique en J/kg·K
 alpha = k / (rho * cp)  #diffusivité thermique m^2/s
-
+#TEST GIT
 
 h_conv = 20  #coeff de convection en W/m^2·K
 
