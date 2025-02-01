@@ -1,0 +1,365 @@
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.animation import FuncAnimation
+from mpl_toolkits.mplot3d import Axes3D
+
+# Paramètres de simulation
+temps_simulation = 500  # s
+
+
+
+
+
+
+# Propriétés thermiques de la plaque
+k = 205    # conductivité thermique [W/mK]
+p = 2700   # densité [kg/m^3]
+cp = 900   # capacité calorifique [J/kgK]
+
+
+
+
+
+
+
+#Propriétés physique de la plaque
+Lx = 120e-3  # m
+Ly = 120e-3  # m
+e = 1.5e-3   # m
+
+
+
+
+
+
+
+
+#Propriétés de l'air
+T_air = 273.15 -20 # K
+h = 0     # coefficient de convection [W/m^2K]
+
+
+
+
+
+# Discrétisation de a plaque
+n_x = 120
+n_y = 120
+dx = Lx/n_x
+dy = Ly/n_y
+dz = e
+vol = dx*dy*e
+
+
+
+# Calcul des paramètres utile à la simulation
+
+
+
+a = k/(cp*p)
+dt = min((dx**2)/(8*a), (dy**2)/(8*a))
+Nt = int(temps_simulation/dt)
+T_min = 300
+T_max = 350
+
+print(dx, dy)                                       # plus dx ou dy est petit, meilleur est la resolution spatiale , mais plus que c'est long et gourmant simuler 
+print(dt)                                           #plus dt est petit, meilleur est la precision temporelle, mais plus c'est long et gourmant simuler    
+print(Nt)                                           
+print((a*dt)/(min(dx**2, dy**2)))                   #Doit être plus petit que 0.5 pour la stabilité. On doit donc faire une compromis entre resoution spatiale et temporelle
+
+
+
+
+
+
+
+
+
+def vector_evolution_temperature(T, pos_ac, nx_ac, ny_ac, P_ac=None,
+                               P_pert=None, pos_pert=None, nx_pert=None, ny_pert=None):
+    T_new = T.copy()
+
+    # Conduction éléments centraux
+    T_new[1:-1,1:-1] = T[1:-1, 1:-1] + a*dt*((T[2:,1:-1]-2*T[1:-1, 1:-1] +T[0:-2, 1:-1])/(dx**2) +
+                                           (T[1:-1,2:]-2*T[1:-1, 1:-1] +T[1:-1, 0:-2])/(dy**2))
+    
+    # Conduction bords et coins
+    T_new[0, 1:-1] += a * dt * ((T[1, 1:-1] - T[0, 1:-1]) / dx**2 +
+                               (T[0, 2:] - 2 * T[0, 1:-1] + T[0, :-2]) / dy**2)
+    
+    T_new[-1, 1:-1] += a * dt * ((T[-2, 1:-1] - T[-1, 1:-1]) / dx**2 +
+                                (T[-1, 2:] - 2 * T[-1, 1:-1] + T[-1, :-2]) / dy**2)
+    
+    T_new[1:-1, 0] += a * dt * ((T[2:, 0] - 2 * T[1:-1, 0] + T[:-2, 0]) / dx**2 +
+                               (T[1:-1, 1] - T[1:-1, 0]) / dy**2)
+    
+    T_new[1:-1, -1] += a * dt * ((T[2:, -1] - 2 * T[1:-1, -1] + T[:-2, -1]) / dx**2 +
+                                (T[1:-1, -2] - T[1:-1, -1]) / dy**2)
+    
+    # Coins
+    T_new[0, 0] += a * dt * ((T[1, 0] - T[0, 0]) / dx**2 + (T[0, 1] - T[0, 0]) / dy**2)
+    T_new[0, -1] += a * dt * ((T[1, -1] - T[0, -1]) / dx**2 + (T[0, -2] - T[0, -1]) / dy**2)
+    T_new[-1, 0] += a * dt * ((T[-2, 0] - T[-1, 0]) / dx**2 + (T[-1, 1] - T[-1, 0]) / dy**2)
+    T_new[-1, -1] += a * dt * ((T[-2, -1] - T[-1, -1]) / dx**2 + (T[-1, -2] - T[-1, -1]) / dy**2)
+
+    # Convection
+    Coeff = (h*dt)/(p*cp)
+    T_new[0, :] += Coeff*(T_air-T_new[0,:])*((dz*dx)/(vol))     # haut
+    T_new[-1, :] += Coeff*(T_air-T_new[-1,:])*((dz*dx)/(vol))   # bas
+    T_new[:,0] += Coeff*(T_air-T_new[:,0])*((dz*dy)/(vol))      # gauche
+    T_new[:,-1] += Coeff*(T_air-T_new[:,-1])*((dz*dy)/(vol))    # droite
+    T_new[:,:] += 2*Coeff*(T_air-T_new[:,:])*((dx*dy)/vol)      # dessus/dessous
+
+    # Actuateur
+    if P_ac is not None and P_ac > 0:
+        i, j = pos_ac
+        P_par_element = P_ac/(nx_ac*ny_ac)
+        T_new[i-nx_ac//2:i+nx_ac//2, j-ny_ac//2:j+ny_ac//2] += (P_par_element*dt)/(p*cp*vol)
+
+    # Perturbation
+    if P_pert is not None and P_pert > 0:
+        k, l = pos_pert
+        P_par_element = P_pert/(nx_pert*ny_pert)
+        T_new[k-nx_pert//2:k+nx_pert//2, l-ny_pert//2:l+ny_pert//2] += (P_par_element*dt)/(p*cp*vol)
+
+    return T_new
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Paramètres actuateur et perturbation
+pos_ac = (n_x//2, n_y//2)  # position centrale
+nx_ac = 10
+ny_ac = 10
+P_ac = 0 # puissance (W)
+
+pos_pert = (30, 30)
+nx_pert = 5
+ny_pert = 5
+P_pert = 0# perturbation (W)
+
+#Données stockées
+temp_center_2D = []
+Energie_list = []
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Nombre d'images pour l'animation
+n_frames = Nt
+
+
+#Animation 
+
+def reset_temperature():        # Reinitialisation de la matrice de temperature pour enlever l'effet de la simulation précédente 
+    global T                    # global est une fonction python qui indique qu'on veut accéder et modifier une variable globale à l'intérieur de la fonction
+    #T = np.ones((n_x,n_y))*(20+273.15)
+    T = np.ones((n_x, n_y))*(300)
+    #T[:,:n_y//2] = 350         #la moitier de la plaque est plus chaude
+    #T[n_x//2,n_y//2] = 10000     #delta de dirac à 500 K
+    for i in range(n_x):
+        T[i, :] = 300 + 200 * np.sin(2 * np.pi * i / n_x)
+
+
+
+
+
+#Animation avec FuncAnimation : FuncAnimation(fig, func=update, frames=n_frames, init_func=init, blit=True)
+
+
+
+
+
+
+#Animation 2D
+
+def animate_2D():               #Animation 2D de la chaleur
+    reset_temperature()         # On s'assure que la temperature de la plaque est reset
+    
+    fig, ax = plt.subplots()    #on cree une figure (fenêtre dans laquelle le graphique sera affiché)  et un axe (ax) pour le graphique
+    im = ax.imshow(               #imshow est une fonction de ax qui affiche la température sous forme de carte thermique 
+        T,                         #La matrice qui sera affichée (temp plaque)
+        cmap='hot',                 #spécifie le barème de couleur utilisé pour la coloration du graphique
+        interpolation='nearest',    #façon dont les couleurs sont inerpolées entre les pixels : 'nearest' : Aucun issage
+        origin='lower',             #defini l'origine de la grille (0,0): lower = en bas a gauche
+        animated=True,              #pour optimiser les animations avec FuncAnimation
+        vmin=T_min,
+        vmax=T_max
+    )
+    
+
+
+
+
+
+
+    def init():                 #Fonciton necessaire pour FuncAnimation de Matplotlib ... FuncAnimation(fig, func=update, frames=n_frames, init_func=init, blit=True)
+                                # Elle sert a initialiser la figure avec de start l'anim
+        im.set_data(T)          #im est l'objet retourne par ax.imshow() (la carte thermique) et set les donnees avec ce de T
+        return [im]             #on retourne une liste de l'objet im
+
+
+
+
+
+
+    def update(frame):                          #Fonction appelee a chaque image (frame) lors de l'animation. Frame indique le numero 
+                                                #de la frame en cours d'utilisation
+        global T
+        for _ in range(100):                                #comme tantot, on permet de modifier la varaible globat T
+            T = vector_evolution_temperature(       #Calcule la nouvelle distribution de la temperature sur la plaque
+                T,
+                pos_ac=pos_ac, nx_ac=nx_ac, ny_ac=ny_ac, P_ac=P_ac,
+                pos_pert=pos_pert, nx_pert=nx_pert, ny_pert=ny_pert, P_pert=P_pert
+            )
+            im.set_data(T)                          #on remet a jour la matrice de temperature
+
+            #Suivre la température en un point sur la plaque dans la simulation 2D
+            center_temp = T[n_x//2, n_y//2]   # On recolte Recolte temperature a cette position     
+            temp_center_2D.append(center_temp)  # on rajoute dans la liste
+
+            # Bilan d'énergie : E(t) = p*cp * somme(T(i,j))* vol
+            E_current = p * cp * np.sum(T) * vol
+            Energie_list.append(E_current)
+        return [im]                                 # on retourne le graphique mis a jour et sous forme de liste (FuncAnimation a besoin de cela)
+
+    plt.colorbar(im, ax=ax, label='Température (K)')            #on cree notre figure avec matplotlib avec im 
+    ax.set_title("Évolution 2D de la température")
+    plt.xlabel("x")
+    plt.ylabel("y")
+
+    anim = FuncAnimation(                           # c'est ici qu'on cree l'animation. Par convention, on utilise la variable anim pour stocker cela
+        fig,                                        # fig est la figure a animer (contient im)
+        func=update,                                # func : c'est la fonction utiliser pour mettre a jour l'animation (ici , c'est update)
+        frames=n_frames//100,                       #nombre de frames a afficher 
+        init_func=init,                             # Fonction d'initialisation
+        blit=True,
+        interval=50                                 #temps entre l'affichage de chaque image
+    )
+    plt.show()
+
+
+
+    times = np.arange(len(temp_center_2D))*dt  # approx le temps (chq frame => dt)
+    
+    fig2, ax2 = plt.subplots()
+    ax2.plot(times, temp_center_2D, marker='o')
+    ax2.set_xlabel("Temps (s)")
+    ax2.set_ylabel("Température au centre (K)")
+    ax2.set_title("Évolution de la température au centre (2D)")
+    plt.show()
+
+
+
+
+
+
+
+
+
+
+
+def animate_3D():
+    reset_temperature()  # Réinitialisation de la température
+    
+    x = np.linspace(0, Lx, n_x)             #nombre de cases en x
+    y = np.linspace(0, Ly, n_y)             #nombre de cases en y
+    X, Y = np.meshgrid(x, y)                # on cree la grille 2D
+
+    fig = plt.figure(figsize=(10, 8))       #on cree la figure plt
+    ax = fig.add_subplot(111, projection='3d')      #on met les cadrans
+
+    # Définir surf comme variable globale
+    global surf     
+    surf = ax.plot_surface(X, Y, T, cmap='hot', vmin=T_min, vmax=T_max)
+
+    # Colorbar associée à la surface
+    cbar = plt.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
+    cbar.set_label('Température (K)')
+
+    def init():
+        ax.set_xlabel('x (m)')
+        ax.set_ylabel('y (m)')
+        ax.set_zlabel('Température (K)')
+        ax.set_title('Évolution de la température (3D)')
+        return [surf]
+
+    def update(frame):
+        global T, surf  # ✅ Important pour accéder à surf
+
+        for _ in range(100):                #meme chose que pour Animation 2D
+            T = vector_evolution_temperature(
+                T,
+                pos_ac=pos_ac, nx_ac=nx_ac, ny_ac=ny_ac, P_ac=P_ac,
+                pos_pert=pos_pert, nx_pert=nx_pert, ny_pert=ny_pert, P_pert=P_pert
+            )
+
+        # Suppression de la surface précédente
+        surf.remove()  # ✅ Fonctionne maintenant car surf est global
+
+        # Création de la nouvelle surface
+        surf = ax.plot_surface(X, Y, T, cmap='hot', vmin=T_min, vmax=T_max)
+
+        # Mise à jour du titre
+        ax.set_title(f"Temps simulé : {frame * dt * 100:.2f} s")
+
+        return [surf]
+
+    anim = FuncAnimation(              #meme chose que pour Animation 3D
+        fig,
+        func=update,
+        frames=n_frames // 100,  
+        init_func=init,
+        interval=50,
+        blit=False
+    )
+
+    plt.show()
+
+
+
+
+
+
+
+# Interface (Terminale) utilisateur
+while True:
+    choix = input("Choisir le type d'animation (2D/3D) ou 'q' pour quitter: ").upper()
+    if choix == 'Q':
+        break
+    elif choix == '3D':
+        animate_3D()
+    elif choix == '2D':
+        animate_2D()
+    else:
+        print("Choix invalide. Veuillez entrer '2D', '3D' ou 'q'.")
