@@ -10,6 +10,7 @@ Lx, Ly = 100e-3, 50e-3  #dimensions plaque en m
 Nx, Ny = 50, 25  #nb elements
 dx, dy = Lx / Nx, Ly / Ny  #le pas
 epaisseur = 1.5e-3  #épaisseur plaque en m
+volume = dx*dy*epaisseur
 
 #propriétés matériau
 k = 205  #conductivité thermique en W/m·K
@@ -18,18 +19,23 @@ cp = 900  #chaleur spécifique en J/kg·K
 alpha = k / (rho * cp)  #diffusivité thermique m^2/s
 #TEST GIT
 
-h_conv = 20  #coeff de convection en W/m^2·K
+h_conv = 15  #coeff de convection en W/m^2·K
 
 Temp_ambiante = 273 + 20  #température ambiante en K
 
-#Cond. stabilité CFL pour stabilité numérique
+#Cond. stabilité CFL pour stabilité numérique YOAN A 8 ET NON 4
 dt = min(dx**2, dy**2) / (4 * alpha)
-Nt = int(TempsTotal / dt)  #nb d'itérations temporelles
+
+
+#matrice start
+
 
 #C.I.
-Temp_init = 298  #25 Celcius
-T = np.full((Nx, Ny), Temp_init)  #champ température init.
+Temp_init = 273.15 + 25 #298 K = 25 Celcius
+T = np.full((Nx, Ny), Temp_init)  #champ température init. donc start à 25 C essayer ones
 Temp_nouvelle = np.zeros_like(T)
+
+Nt = int(TempsTotal / dt)  #nb d'itérations temporelles
 
 # Position capteurs (à ajuster)
 laser_x, laser_y = Nx // 10, Ny // 10
@@ -113,3 +119,89 @@ video = animation.FuncAnimation(fig, update, frames=Nt, repeat=False)
 video.save('TemperatureDistribution2D.mp4', writer='ffmpeg', fps=30, extra_args=['-vcodec', 'libx264', '-pix_fmt', 'yuv420p'])
 
 plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#def vector_evolution_temperature(T, pos_ac, nx_ac, ny_ac, P_ac = None,
+#                                P_pert = None , pos_pert = None , nx_pert = None, ny_pert = None):
+ #   T_new = T.copy()
+  #  vol = dx*dy*dz
+
+
+
+   # #conductions éléments centraux
+  #  T_new[1:-1,1:-1] = T[1:-1, 1:-1] + a*dt*((T[2:,1:-1]-2*T[1:-1, 1:-1] +T[0:-2, 1:-1])/(dx**2) +
+ #                                           (T[1:-1,2:]-2*T[1:-1, 1:-1] +T[1:-1, 0:-2])/(dy**2))
+    
+    # conduction éléments sur les bords et coins
+ #   T_new[0, 1:-1] += a * dt * ((T[1, 1:-1] - T[0, 1:-1]) / dx**2 +
+ #                               (T[0, 2:] - 2 * T[0, 1:-1] + T[0, :-2]) / dy**2)  # Bord haut
+
+ #   T_new[-1, 1:-1] += a * dt * ((T[-2, 1:-1] - T[-1, 1:-1]) / dx**2 +
+ #                                (T[-1, 2:] - 2 * T[-1, 1:-1] + T[-1, :-2]) / dy**2)  # Bord bas
+
+  #  T_new[1:-1, 0] += a * dt * ((T[2:, 0] - 2 * T[1:-1, 0] + T[:-2, 0]) / dx**2 +
+  #                              (T[1:-1, 1] - T[1:-1, 0]) / dy**2)  # Bord gauche
+
+ #   T_new[1:-1, -1] += a * dt * ((T[2:, -1] - 2 * T[1:-1, -1] + T[:-2, -1]) / dx**2 +
+ #                                (T[1:-1, -2] - T[1:-1, -1]) / dy**2)  # Bord droit
+
+  #  T_new[0, 0] += a * dt * ((T[1, 0] - T[0, 0]) / dx**2 + (T[0, 1] - T[0, 0]) / dy**2)  # Coin haut-gauche
+
+  #  T_new[0, -1] += a * dt * ((T[1, -1] - T[0, -1]) / dx**2 + (T[0, -2] - T[0, -1]) / dy**2)  # Coin haut-droit
+
+  #  T_new[-1, 0] += a * dt * ((T[-2, 0] - T[-1, 0]) / dx**2 + (T[-1, 1] - T[-1, 0]) / dy**2)  # Coin bas-gauche
+
+  #  T_new[-1, -1] += a * dt * ((T[-2, -1] - T[-1, -1]) / dx**2 + (T[-1, -2] - T[-1, -1]) / dy**2)  # Coin bas-droit
+    
+
+
+
+    # Convection 
+  #  Coeff = (h*dt)/(p*cp) #m
+
+    #Convection bord haut
+  #  T_new[0, :] += Coeff*(T_air-T_new[0,:])*((dz*dx)/(vol))
+
+    #Convection bord bas
+#    T_new[-1, :] +=  Coeff*(T_air-T_new[-1,:])*((dz*dx)/(vol))
+    
+    #Convection bord gauche
+  #  T_new[:,0] += Coeff*(T_air-T_new[:,0])*((dz*dy)/(vol))
+
+    #Convection bord droit 
+   # T_new[:,-1] += Coeff*(T_air-T_new[:,-1])*((dz*dy)/(vol))
+
+    #Convection dessus/desosus
+   # T_new[:,:] +=  2*Coeff*(T_air-T_new[:,:])*((dx*dy)/vol)
+
+
+
+    # Actuateur
+  #  i, j = pos_ac
+  #  P_par_element = P_ac/(nx_ac*ny_ac)
+  #  T_new[i-nx_ac//2: i+nx_ac//2 , j-ny_ac//2 : j + ny_ac//2 ] += (P_par_element*dt)/(p*cp*vol)
+
+    # Perturbation
+ #   if P_pert is not None :
+ #       i, j = pos_pert
+  #      P_par_element = P_pert/(nx_pert*ny_pert)
+  #      T_new[i-nx_pert//2:i+nx_pert//2, j-ny_pert//2:j+ny_pert//2] += (P_par_element*dt)/(p*cp*vol)
+
+  #  return T_new
