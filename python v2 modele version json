@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D
 import json
+import tkinter as tk
+from tkinter import ttk
 
 #charge les paramètres à partir du fichier JSON
 with open('simulation_parametres.json', 'r') as f:
@@ -47,95 +49,103 @@ x = np.linspace(0, Lx * 1e3, Nx)
 y = np.linspace(0, Ly * 1e3, Ny)
 X, Y = np.meshgrid(x, y)
 
+#interface pour contrôle
+root = tk.Tk()
+root.title("Interface de contrôle de la simulation")
+
+#curseur d'ajustement de puissance
+puissance_var = tk.DoubleVar(value=actuateurs[0]['puissance'])
+puissance_label = ttk.Label(root, text="Puissance de l'actuateur (W)")
+puissance_label.pack()
+puissance_slider = ttk.Scale(root, from_=1, to=1000, variable=puissance_var, orient='horizontal')
+puissance_slider.pack()
+
+#bouton démarrage
+start_button = ttk.Button(root, text="Démarrer la simulation")
+start_button.pack()
+
+#start de la simulation
+fig = plt.figure(figsize=(14, 6))
+ax1 = fig.add_subplot(131)
+ax2 = fig.add_subplot(132, projection='3d')
+ax3 = fig.add_subplot(133)
+cmap = plt.get_cmap('PuRd')
+
+#graphiques
+im = ax1.imshow(T, cmap=cmap, interpolation='nearest')
+surf = ax2.plot_surface(X, Y, T.T, cmap=cmap)
+time_vector = []
+
+#très important : ne pas changer ;) ahahhaha
+temperature_lines = {}
+rose_colors = ['deeppink', 'hotpink', 'mediumvioletred', 'orchid', 'palevioletred'] #DO NOT CHANGE, WILL FAIL TO COMPUTE
+
+for (name, _), color in zip(params['points_suivi'].items(), rose_colors):
+    line, = ax3.plot([], [], label=name, color=color)
+    temperature_lines[name] = line
+
+ax3.set_xlabel("Temps (s)")
+ax3.set_ylabel("Température (°C)")
+ax3.legend()
+
+
+
 #fc de température
 def update_temp():
     global T, Temp_nouvelle
     T_new = T.copy()
-    
-    #conduction
+
+    # Conduction
     T_new[1:-1,1:-1] += alpha * dt * (
         (T[2:,1:-1] - 2 * T[1:-1,1:-1] + T[:-2,1:-1]) / dx**2 +
         (T[1:-1,2:] - 2 * T[1:-1,1:-1] + T[1:-1,:-2]) / dy**2
     )
 
-    #C.L. convection
+    # Conditions aux limites de convection
     T_new[0, :] += dt / (rho * cp) * h_conv * (Temp_ambiante - T[0, :]) / epaisseur
     T_new[-1, :] += dt / (rho * cp) * h_conv * (Temp_ambiante - T[-1, :]) / epaisseur
     T_new[:, 0] += dt / (rho * cp) * h_conv * (Temp_ambiante - T[:, 0]) / epaisseur
     T_new[:, -1] += dt / (rho * cp) * h_conv * (Temp_ambiante - T[:, -1]) / epaisseur
 
-    #actuateurs
+    # Actuateurs
     for act in actuateurs:
         x_idx, y_idx = act['position']
-        P = act['puissance']
+        P = max(puissance_var.get(), 1)  # Éviter des valeurs trop proches de zéro
         T_new[x_idx, y_idx] += (P * dt) / (rho * cp * volume)
-
-    #perturbations
-    for pert in perturbations:
-        x_idx, y_idx = pert['position']
-        P = pert['puissance']
-        T_new[x_idx, y_idx] += (P * dt) / (rho * cp * volume)
-
 
     T[:, :] = T_new[:, :]
 
-#creation affichage animation
-fig = plt.figure(figsize=(14, 6))
-ax2 = fig.add_subplot(121, projection='3d')  
-ax1 = fig.add_subplot(122)
-cmap = plt.get_cmap('PuRd')  #laisser rose pls merci :)))))
 
-im = ax1.imshow(T, cmap=cmap, interpolation='nearest', origin='lower', animated=True)
-plt.colorbar(im, ax=ax1, label='Température (K)')
-ax1.set_title("Évolution 2D de la température")
-ax1.set_xlabel("x")
-ax1.set_ylabel("y")
-
-#mise a jour animation
+#fc de mise à jour animation
 def update(frame):
+    global surf
     update_temp()
+    im.set_data(T)
+    
+    # Supprimer la surface précédente
+    surf.remove()
+    surf = ax2.plot_surface(X, Y, T.T, cmap=cmap)
+
+    time_vector.append(frame * dt)
+    if len(time_vector) > 500:  # Limiter la taille pour éviter les ralentissements
+        time_vector.pop(0)
+        for name in temperature_points:
+            temperature_points[name].pop(0)
 
     for name, pos in params['points_suivi'].items():
         temperature_points[name].append(T[pos[0], pos[1]])
+        temperature_lines[name].set_data(time_vector, np.array(temperature_points[name]) - 273)
 
-    ax1.clear()
-    im = ax1.imshow(T, cmap=cmap, interpolation='nearest', origin='lower', animated=True)
-    ax1.set_title("Évolution 2D de la température")
-    ax1.set_xlabel("x")
-    ax1.set_ylabel("y")
+    ax3.relim()
+    ax3.autoscale_view()
+    return [im, surf, ax3]
 
-    ax2.clear()
-    ax2.plot_surface(X, Y, T.T, cmap=cmap)
-    ax2.set_xlabel("X position [mm]")
-    ax2.set_ylabel("Y position [mm]")
-    ax2.set_zlabel("Température (K)")
-    ax2.set_title(f"Distribution 3D de la température à t = {frame * dt:.2f} s")
+ani = FuncAnimation(fig, update, frames=Nt//100, interval=50, blit=False)
 
-    return [im]
 
-#animation affichage
-anim = FuncAnimation(
-    fig,
-    func=update,
-    frames=Nt // 100,
-    blit=False,
-    interval=50
-)
+def start_simulation():
+    plt.show()
 
-plt.show()
+start_button.config(command=start_simulation)
 
-#Affichage comme l'exemple pw présentation projet, bon exemple visuel, à peut-être placer avec le graph 3D
-fig2, ax2 = plt.subplots()
-time_vector = np.arange(len(next(iter(temperature_points.values())))) * dt
-
-rose_colors = ['orchid', 'deeppink', 'lightpink']
-
-for (name, temps), color in zip(temperature_points.items(), rose_colors):
-    ax2.plot(time_vector, np.array(temps) - 273, label=name, color=color)
-
-ax2.set_xlabel("Temps (s)")
-ax2.set_ylabel("Température (°C)")
-ax2.legend()
-ax2.grid(True)
-
-plt.show()
+root.mainloop()
