@@ -2,19 +2,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D
-
-# Paramètres de simulation
-temps_simulation = 500  # s
+import json
 
 
 
 
+def load_config(file_path="config_simulation.json"):
+    with open(file_path, 'r') as file:
+        config = json.load(file)
+    return config
+
+
+config = load_config()
+
+temps_simulation = config["simulation"]["temps_simulation"]#temps_simulation = 500  # s
 
 
 # Propriétés thermiques de la plaque
-k = 205    # conductivité thermique [W/mK]
-p = 2700   # densité [kg/m^3]
-cp = 900   # capacité calorifique [J/kgK]
+k = config["proprietes_thermiques"]["k"] #k = 205    # conductivité thermique [W/mK]
+p = config["proprietes_thermiques"]["p"] #p = 2700   # densité [kg/m^3]
+cp = config["proprietes_thermiques"]["cp"] #cp = 900   # capacité calorifique [J/kgK]
 
 
 
@@ -23,9 +30,9 @@ cp = 900   # capacité calorifique [J/kgK]
 
 
 #Propriétés physique de la plaque
-Lx = 120e-3  # m
-Ly = 120e-3  # m
-e = 1.5e-3   # m
+Lx = config["dimensions_plaque"]["Lx"]#Lx = 120e-3  # m
+Ly = config["dimensions_plaque"]["Ly"]#Ly = 120e-3  # m
+e = config["dimensions_plaque"]["e"]#e = 1.5e-3   # m
 
 
 
@@ -35,16 +42,16 @@ e = 1.5e-3   # m
 
 
 #Propriétés de l'air
-T_air = 273.15 +250 # K
-h = 20
+T_air = config["convection"]["T_air"] #T_air = 273.15 +250 # K
+h = config["convection"]["h"] #h = 20 [w/m^2k]
 
 
 
 
 
 # Discrétisation de a plaque
-n_x = 120
-n_y = 120
+n_x = config["discretisation"]["n_x"]#n_x = 120
+n_y = config["discretisation"]["n_y"] #n_y = 120
 dx = Lx/n_x
 dy = Ly/n_y
 dz = e
@@ -142,15 +149,15 @@ def vector_evolution_temperature(T, pos_ac, nx_ac, ny_ac, P_ac=None,
 
 
 # Paramètres actuateur et perturbation
-pos_ac = (30, 60)  # position centrale
-nx_ac = 10
-ny_ac = 10
-P_ac = 1 # puissance (W)
+pos_ac = tuple(config["simulation"]["pos_ac"])      #pos_ac = (30, 60)  # position centrale
+nx_ac = config["simulation"]["nx_ac"]               #nx_ac = 10
+ny_ac = config["simulation"]["ny_ac"]               #ny_ac = 10
+P_ac = config["simulation"]["P_ac"]                 #P_ac = 1 # puissance (W)
 
-pos_pert = (n_y//2, n_x//2)
-nx_pert = 5
-ny_pert = 5
-P_pert = 0# perturbation (W)
+pos_pert = tuple(config["simulation"]["pos_pert"])  #pos_pert = (n_y//2, n_x//2)
+nx_pert = config["simulation"]["nx_pert"]           #nx_pert = 5
+ny_pert = config["simulation"]["ny_pert"]           #ny_pert = 5
+P_pert = config["simulation"]["P_pert"]             #P_pert = 0# perturbation (W)
 
 #Données stockées
 temp_therm_1 = []
