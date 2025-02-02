@@ -28,13 +28,19 @@ Temp_ambiante = params['Temp_ambiante']  #température ambiante en K
 dx, dy = Lx / Nx, Ly / Ny
 epaisseur = params['epaisseur']  #epaisseur plaque en m
 volume = dx * dy * epaisseur
-dt = min(dx**2, dy**2) / (4 * alpha)
+dt = min(dx**2, dy**2) / (8 * alpha)
 Nt = int(TempsTotal / dt)
+
+
 
 #C.I.
 Temp_init = params['Temp_init']  # 298 K = 25°C
 T = np.full((Nx, Ny), Temp_init)
-Temp_nouvelle = np.zeros_like(T)
+coeff = (h_conv * dt)/(rho * cp)
+T_air = 273.15 -20 # K
+
+
+
 
 #sources de chaleur
 actuateurs = params['actuateurs']
@@ -59,6 +65,8 @@ puissance_label = ttk.Label(root, text="Puissance de l'actuateur (W)")
 puissance_label.pack()
 puissance_slider = ttk.Scale(root, from_=1, to=1000, variable=puissance_var, orient='horizontal')
 puissance_slider.pack()
+
+
 
 #bouton démarrage
 start_button = ttk.Button(root, text="Démarrer la simulation")
@@ -94,24 +102,46 @@ ax3.legend()
 def update_temp():
     global T, Temp_nouvelle
     T_new = T.copy()
+    #T_new += coeff * (T_air - T_new)
+    # Conduction éléments centraux
+    T_new[1:-1,1:-1] = T[1:-1, 1:-1] + alpha*dt*((T[2:,1:-1]-2*T[1:-1, 1:-1] +T[0:-2, 1:-1])/(dx**2) +
+                                           (T[1:-1,2:]-2*T[1:-1, 1:-1] +T[1:-1, 0:-2])/(dy**2))
 
-    # Conduction
-    T_new[1:-1,1:-1] += alpha * dt * (
-        (T[2:,1:-1] - 2 * T[1:-1,1:-1] + T[:-2,1:-1]) / dx**2 +
-        (T[1:-1,2:] - 2 * T[1:-1,1:-1] + T[1:-1,:-2]) / dy**2
-    )
 
-    # Conditions aux limites de convection
-    T_new[0, :] += dt / (rho * cp) * h_conv * (Temp_ambiante - T[0, :]) / epaisseur
-    T_new[-1, :] += dt / (rho * cp) * h_conv * (Temp_ambiante - T[-1, :]) / epaisseur
-    T_new[:, 0] += dt / (rho * cp) * h_conv * (Temp_ambiante - T[:, 0]) / epaisseur
-    T_new[:, -1] += dt / (rho * cp) * h_conv * (Temp_ambiante - T[:, -1]) / epaisseur
+    #conduction bords et coins
+    T_new[0, 1:-1] += alpha * dt * ((T[1, 1:-1] - T[0, 1:-1]) / dx**2 +
+                               (T[0, 2:] - 2 * T[0, 1:-1] + T[0, :-2]) / dy**2)
+    
+    T_new[-1, 1:-1] += alpha * dt * ((T[-2, 1:-1] - T[-1, 1:-1]) / dx**2 +
+                                (T[-1, 2:] - 2 * T[-1, 1:-1] + T[-1, :-2]) / dy**2)
+    
+    T_new[1:-1, 0] += alpha * dt * ((T[2:, 0] - 2 * T[1:-1, 0] + T[:-2, 0]) / dx**2 +
+                               (T[1:-1, 1] - T[1:-1, 0]) / dy**2)
+    
+    T_new[1:-1, -1] += alpha * dt * ((T[2:, -1] - 2 * T[1:-1, -1] + T[:-2, -1]) / dx**2 +
+                                (T[1:-1, -2] - T[1:-1, -1]) / dy**2)
+    
+
+    # Coins
+    T_new[0, 0] += alpha * dt * ((T[1, 0] - T[0, 0]) / dx**2 + (T[0, 1] - T[0, 0]) / dy**2)
+    T_new[0, -1] += alpha * dt * ((T[1, -1] - T[0, -1]) / dx**2 + (T[0, -2] - T[0, -1]) / dy**2)
+    T_new[-1, 0] += alpha * dt * ((T[-2, 0] - T[-1, 0]) / dx**2 + (T[-1, 1] - T[-1, 0]) / dy**2)
+    T_new[-1, -1] += alpha * dt * ((T[-2, -1] - T[-1, -1]) / dx**2 + (T[-1, -2] - T[-1, -1]) / dy**2)
+
+
+    # Convection
+    Coeff = (h_conv*dt)/(rho*cp)
+    T_new[0, :] += Coeff*(T_air-T_new[0,:])*((epaisseur*dx)/(volume))     # haut
+    T_new[-1, :] += Coeff*(T_air-T_new[-1,:])*((epaisseur*dx)/(volume))   # bas
+    T_new[:,0] += Coeff*(T_air-T_new[:,0])*((epaisseur*dy)/(volume))      # gauche
+    T_new[:,-1] += Coeff*(T_air-T_new[:,-1])*((epaisseur*dy)/(volume))    # droite
+    T_new[:,:] += 2*Coeff*(T_air-T_new[:,:])*((dx*dy)/volume)      # dessus/dessous
 
     # Actuateurs
     for act in actuateurs:
-        x_idx, y_idx = act['position']
-        P = max(puissance_var.get(), 1)  # Éviter des valeurs trop proches de zéro
-        T_new[x_idx, y_idx] += (P * dt) / (rho * cp * volume)
+        i, j = act['position']
+        P_par_element = max(puissance_var.get(), 1)  # Éviter des valeurs trop proches de zéro
+        T_new[i, j] += (P_par_element * dt) / (rho * cp * volume)
 
     T[:, :] = T_new[:, :]
 
@@ -127,7 +157,7 @@ def update(frame):
     surf = ax2.plot_surface(X, Y, T.T, cmap=cmap)
 
     time_vector.append(frame * dt)
-    if len(time_vector) > 500:  # Limiter la taille pour éviter les ralentissements
+    if len(time_vector) > 300:  # Limiter la taille pour éviter les ralentissements
         time_vector.pop(0)
         for name in temperature_points:
             temperature_points[name].pop(0)
