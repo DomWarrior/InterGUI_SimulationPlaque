@@ -185,10 +185,10 @@ def reset_temperature():        # Reinitialisation de la matrice de temperature 
     global T                    # global est une fonction python qui indique qu'on veut accéder et modifier une variable globale à l'intérieur de la fonction
     #T = np.ones((n_x,n_y))*(20+273.15)
     T = np.ones((n_x, n_y))*(300)
-    #T[:,:n_y//2] = 350         #la moitier de la plaque est plus chaude
+    T[:,:n_y//2] = 350         #la moitier de la plaque est plus chaude
     #T[n_x//2,n_y//2] = 10000     #delta de dirac à 500 K
-    for i in range(n_x):
-        T[i, :] = 300 + 200 * np.sin(2 * np.pi * i / n_x)
+    #for i in range(n_x):
+        #T[i, :] = 300 + 200 * np.sin(2 * np.pi * i / n_x)
 
 
 
