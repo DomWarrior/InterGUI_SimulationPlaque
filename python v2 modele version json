@@ -5,46 +5,42 @@ from mpl_toolkits.mplot3d import Axes3D
 import json
 
 #charge les paramètres à partir du fichier JSON
-with open('simulation_params.json', 'r') as f:
+with open('simulation_parametres.json', 'r') as f:
     params = json.load(f)
 
-TempsTotal = 50  #temps de simulation
+TempsTotal = params['TempsTotal']  #temps de simulation
 
 #paramètres à confirmer plaque dimension
-Lx, Ly = 100e-3, 50e-3  #dimensions plaque en m
-Nx, Ny = 50, 25  #nb elements
+Lx, Ly = params['Lx'], params['Ly']  #dimensions plaque en m
+Nx, Ny = params['Nx'], params['Ny'] #nb elements
 
 #propriétés physiques et matériau aluminium
-k = 205  #conductivité thermique en W/m·K
-rho = 2700  #densité en kg/m^3
-cp = 900  #chaleur spécifique en J/kg·K
+k = params['k']  #conductivité thermique en W/m·K
+rho = params['rho']  #densité en kg/m^3
+cp = params['cp']  #chaleur spécifique en J/kg·K
 alpha = k / (rho * cp)  #diffusivité thermique m^2/s
-h_conv = 15  # coeff de convection en W/m^2·K
-Temp_ambiante = 273 + 20  #température ambiante en K
+h_conv = params['h_conv']  # coeff de convection en W/m^2·K
+Temp_ambiante = params['Temp_ambiante']  #température ambiante en K
 
 #discrétisation
 dx, dy = Lx / Nx, Ly / Ny
-epaisseur = 1.5e-3  #epaisseur plaque en m
+epaisseur = params['epaisseur']  #epaisseur plaque en m
 volume = dx * dy * epaisseur
 dt = min(dx**2, dy**2) / (4 * alpha)
 Nt = int(TempsTotal / dt)
 
 #C.I.
-Temp_init = 273.15 + 25  # 298 K = 25°C
+Temp_init = params['Temp_init']  # 298 K = 25°C
 T = np.full((Nx, Ny), Temp_init)
 Temp_nouvelle = np.zeros_like(T)
 
-#sources de chaleur, positionnement capteurs (à ajuster)
-laser_x, laser_y = Nx // 10, Ny // 10
-actuateur_x, actuateur_y = 3 * Nx // 4, 3 * Ny // 4
-Pin = 500  #puissance totale en W
-P = np.zeros((Nx, Ny))
-P[laser_x, laser_y] = Pin / (dx * dy)
+#sources de chaleur
+actuateurs = params['actuateurs']
+perturbations = params['perturbations']
+
 
 #temp.
-temperature_laser = []
-temperature_milieu = []
-temperature_actuateur = []
+temperature_points = {name: [] for name in params['points_suivi']}
 
 #construction grilles
 x = np.linspace(0, Lx * 1e3, Nx)
@@ -56,16 +52,30 @@ def update_temp():
     global T, Temp_nouvelle
     T_new = T.copy()
     
-    T_new[1:-1,1:-1] = T[1:-1, 1:-1] + alpha * dt * (
+    #conduction
+    T_new[1:-1,1:-1] += alpha * dt * (
         (T[2:,1:-1] - 2 * T[1:-1,1:-1] + T[:-2,1:-1]) / dx**2 +
         (T[1:-1,2:] - 2 * T[1:-1,1:-1] + T[1:-1,:-2]) / dy**2
-    ) + dt * P[1:-1,1:-1] / (rho * cp)
+    )
 
     #C.L. convection
     T_new[0, :] += dt / (rho * cp) * h_conv * (Temp_ambiante - T[0, :]) / epaisseur
     T_new[-1, :] += dt / (rho * cp) * h_conv * (Temp_ambiante - T[-1, :]) / epaisseur
     T_new[:, 0] += dt / (rho * cp) * h_conv * (Temp_ambiante - T[:, 0]) / epaisseur
     T_new[:, -1] += dt / (rho * cp) * h_conv * (Temp_ambiante - T[:, -1]) / epaisseur
+
+    #actuateurs
+    for act in actuateurs:
+        x_idx, y_idx = act['position']
+        P = act['puissance']
+        T_new[x_idx, y_idx] += (P * dt) / (rho * cp * volume)
+
+    #perturbations
+    for pert in perturbations:
+        x_idx, y_idx = pert['position']
+        P = pert['puissance']
+        T_new[x_idx, y_idx] += (P * dt) / (rho * cp * volume)
+
 
     T[:, :] = T_new[:, :]
 
@@ -85,9 +95,8 @@ ax1.set_ylabel("y")
 def update(frame):
     update_temp()
 
-    temperature_laser.append(T[laser_x, laser_y])
-    temperature_milieu.append(T[Nx//2, Ny//2])
-    temperature_actuateur.append(T[actuateur_x, actuateur_y])
+    for name, pos in params['points_suivi'].items():
+        temperature_points[name].append(T[pos[0], pos[1]])
 
     ax1.clear()
     im = ax1.imshow(T, cmap=cmap, interpolation='nearest', origin='lower', animated=True)
@@ -117,11 +126,12 @@ plt.show()
 
 #Affichage comme l'exemple pw présentation projet, bon exemple visuel, à peut-être placer avec le graph 3D
 fig2, ax2 = plt.subplots()
-time_vector = np.arange(len(temperature_laser)) * dt
+time_vector = np.arange(len(next(iter(temperature_points.values())))) * dt
 
-ax2.plot(time_vector, np.array(temperature_laser) - 273, label="Au laser", color='magenta')
-ax2.plot(time_vector, np.array(temperature_milieu) - 273, label="Au milieu", color='deeppink')
-ax2.plot(time_vector, np.array(temperature_actuateur) - 273, label="À l'actuateur", color='orchid')
+rose_colors = ['orchid', 'deeppink', 'lightpink']
+
+for (name, temps), color in zip(temperature_points.items(), rose_colors):
+    ax2.plot(time_vector, np.array(temps) - 273, label=name, color=color)
 
 ax2.set_xlabel("Temps (s)")
 ax2.set_ylabel("Température (°C)")

@@ -1,0 +1,26 @@
+{
+    "TempsTotal": 50,
+    "Lx": 0.1,
+    "Ly": 0.05,
+    "Nx": 50,
+    "Ny": 25,
+    "k": 205,
+    "rho": 2700,
+    "cp": 900,
+    "h_conv": 15,
+    "Temp_ambiante": 293.15,
+    "epaisseur": 0.0015,
+    "Temp_init": 298.15,
+    "actuateurs": [
+      {"position": [10, 10], "puissance": 500}
+    ],
+    "perturbations": [
+      {"position": [20, 15], "puissance": 100}
+    ],
+    "points_suivi": {
+      "laser": [10, 10],
+      "milieu": [25, 12],
+      "actuateur": [37, 18]
+    }
+  }
+  
