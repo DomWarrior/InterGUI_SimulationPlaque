@@ -5,7 +5,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import json
 import tkinter as tk
 from tkinter import ttk
-
+import threading
 
 #charge les paramètres à partir du fichier JSON
 with open('simulation_parametres.json', 'r') as f:
@@ -14,7 +14,7 @@ with open('simulation_parametres.json', 'r') as f:
 TempsTotal = params['TempsTotal']  #temps de simulation
 
 #paramètres à confirmer plaque dimension
-Lx, Ly = params['Lx'], params['Ly']  #dimensions plaque en m
+Lx, Ly = 12e-3, 6e-3  #dimensions plaque en m
 Nx, Ny = params['Nx'], params['Ny'] #nb elements
 
 #propriétés physiques et matériau aluminium
@@ -29,24 +29,19 @@ Temp_ambiante = params['Temp_ambiante']  #température ambiante en K
 dx, dy = Lx / Nx, Ly / Ny
 epaisseur = params['epaisseur']  #epaisseur plaque en m
 volume = dx * dy * epaisseur
+
 dt = min(dx**2, dy**2) / (8 * alpha)
 Nt = int(TempsTotal / dt)
-
-
 
 #C.I.
 Temp_init = params['Temp_init']  # 298 K = 25°C
 T = np.full((Nx, Ny), Temp_init)
 coeff = (h_conv * dt)/(rho * cp)
-T_air = 273.15 -20 # K
-
-
-
+T_air = 273.15 - 20 # K
 
 #sources de chaleur
 actuateurs = params['actuateurs']
 perturbations = params['perturbations']
-
 
 #temp.
 temperature_points = {name: [] for name in params['points_suivi']}
@@ -60,16 +55,45 @@ X, Y = np.meshgrid(x, y)
 root = tk.Tk()
 root.title("Interface de contrôle de la simulation")
 
-#curseur d'ajustement de puissance
-puissance_var = tk.DoubleVar(value=actuateurs[0]['puissance'])
+# Entrées pour la puissance et la durée de l'actuateur
 puissance_label = ttk.Label(root, text="Puissance de l'actuateur (W)")
 puissance_label.pack()
-puissance_slider = ttk.Scale(root, from_=1, to=1000, variable=puissance_var, orient='horizontal')
-puissance_slider.pack()
+puissance_var = tk.StringVar(value="500")
+puissance_entry = ttk.Entry(root, textvariable=puissance_var)
+puissance_entry.pack()
 
+duree_label = ttk.Label(root, text="Durée de l'actuateur (s)")
+duree_label.pack()
+duree_var = tk.StringVar(value="60")
+duree_entry = ttk.Entry(root, textvariable=duree_var)
+duree_entry.pack()
 
+# Entrées pour la puissance et la durée de la perturbation
+perturbation_label = ttk.Label(root, text="Puissance de la perturbation (W)")
+perturbation_label.pack()
+perturbation_var = tk.StringVar(value="500")
+perturbation_entry = ttk.Entry(root, textvariable=perturbation_var)
+perturbation_entry.pack()
 
+perturb_duree_label = ttk.Label(root, text="Durée de la perturbation (s)")
+perturb_duree_label.pack()
+perturb_duree_var = tk.StringVar(value="60")
+perturb_duree_entry = ttk.Entry(root, textvariable=perturb_duree_var)
+perturb_duree_entry.pack()
 
+#position de la perturbation
+perturb_x_var = tk.StringVar(value=str(perturbations[0]['position'][0]))
+perturb_y_var = tk.StringVar(value=str(perturbations[0]['position'][1]))
+
+perturb_x_label = ttk.Label(root, text="Position X de la perturbation")
+perturb_x_label.pack()
+perturb_x_entry = ttk.Entry(root, textvariable=perturb_x_var)
+perturb_x_entry.pack()
+
+perturb_y_label = ttk.Label(root, text="Position Y de la perturbation")
+perturb_y_label.pack()
+perturb_y_entry = ttk.Entry(root, textvariable=perturb_y_var)
+perturb_y_entry.pack()
 
 #bouton démarrage
 start_button = ttk.Button(root, text="Démarrer la simulation")
@@ -83,20 +107,22 @@ ax3 = fig.add_subplot(133)
 cmap = plt.get_cmap('PuRd')
 
 #graphiques
-im = ax1.imshow(T, cmap=cmap, interpolation='nearest')
+im = ax1.imshow(T, cmap=cmap, interpolation='nearest', origin='lower', extent=[0, Lx * 1e3, 0, Ly * 1e3])
+plt.colorbar(im, ax=ax1, label='Température (K)')  # Ajout de la barre de couleur
 ax1.set_xlabel("X (mm)")
 ax1.set_ylabel("Y (mm)")
+ax1.set_title("Distribution de Température 2D")
 
 surf = ax2.plot_surface(X, Y, T.T, cmap=cmap)
 ax2.set_xlabel("X (mm)")
 ax2.set_ylabel("Y (mm)")
 ax2.set_zlabel("Température (K)")
-
-time_vector = []
+ax2.set_title("Distribution de Température 3D")
 
 #très important : ne pas changer ;) ahahhaha
+time_vector = []
 temperature_lines = {}
-rose_colors = ['deeppink', 'hotpink', 'mediumvioletred', 'orchid', 'palevioletred'] #DO NOT CHANGE, WILL FAIL TO COMPUTE
+rose_colors = ['deeppink', 'blue', 'mediumvioletred', 'orchid', 'red'] #DO NOT CHANGE, WILL FAIL TO COMPUTE
 
 for (name, _), color in zip(params['points_suivi'].items(), rose_colors):
     line, = ax3.plot([], [], label=name, color=color)
@@ -104,40 +130,43 @@ for (name, _), color in zip(params['points_suivi'].items(), rose_colors):
 
 ax3.set_xlabel("Temps (s)")
 ax3.set_ylabel("Température (°C)")
+ax3.set_title("Évolution Temporelle des Points de Suivi")
 ax3.legend()
 
-
+#pour régler un problème avec la simulation de la perturbation
+def get_valid_int(value, default=0):
+    try:
+        return int(value)
+    except ValueError:
+        return default
 
 #fc de température
-def update_temp():
-    global T, Temp_nouvelle
+def update_temp(frame):
+    global T
     T_new = T.copy()
     #T_new += coeff * (T_air - T_new)
     # Conduction éléments centraux
     T_new[1:-1,1:-1] = T[1:-1, 1:-1] + alpha*dt*((T[2:,1:-1]-2*T[1:-1, 1:-1] +T[0:-2, 1:-1])/(dx**2) +
                                            (T[1:-1,2:]-2*T[1:-1, 1:-1] +T[1:-1, 0:-2])/(dy**2))
 
-
     #conduction bords et coins
     T_new[0, 1:-1] += alpha * dt * ((T[1, 1:-1] - T[0, 1:-1]) / dx**2 +
                                (T[0, 2:] - 2 * T[0, 1:-1] + T[0, :-2]) / dy**2)
-    
+
     T_new[-1, 1:-1] += alpha * dt * ((T[-2, 1:-1] - T[-1, 1:-1]) / dx**2 +
                                 (T[-1, 2:] - 2 * T[-1, 1:-1] + T[-1, :-2]) / dy**2)
-    
+
     T_new[1:-1, 0] += alpha * dt * ((T[2:, 0] - 2 * T[1:-1, 0] + T[:-2, 0]) / dx**2 +
                                (T[1:-1, 1] - T[1:-1, 0]) / dy**2)
-    
+
     T_new[1:-1, -1] += alpha * dt * ((T[2:, -1] - 2 * T[1:-1, -1] + T[:-2, -1]) / dx**2 +
                                 (T[1:-1, -2] - T[1:-1, -1]) / dy**2)
-    
 
     # Coins
     T_new[0, 0] += alpha * dt * ((T[1, 0] - T[0, 0]) / dx**2 + (T[0, 1] - T[0, 0]) / dy**2)
     T_new[0, -1] += alpha * dt * ((T[1, -1] - T[0, -1]) / dx**2 + (T[0, -2] - T[0, -1]) / dy**2)
     T_new[-1, 0] += alpha * dt * ((T[-2, 0] - T[-1, 0]) / dx**2 + (T[-1, 1] - T[-1, 0]) / dy**2)
     T_new[-1, -1] += alpha * dt * ((T[-2, -1] - T[-1, -1]) / dx**2 + (T[-1, -2] - T[-1, -1]) / dy**2)
-
 
     # Convection
     Coeff = (h_conv*dt)/(rho*cp)
@@ -147,41 +176,42 @@ def update_temp():
     T_new[:,-1] += Coeff*(T_air-T_new[:,-1])*((epaisseur*dy)/(volume))    # droite
     T_new[:,:] += 2*Coeff*(T_air-T_new[:,:])*((dx*dy)/volume)      # dessus/dessous
 
-    # Actuateurs
-    for act in actuateurs:
-        i, j = act['position']
-        P_par_element = max(puissance_var.get(), 1)  # Éviter des valeurs trop proches de zéro
-        T_new[i, j] += (P_par_element * dt) / (rho * cp * volume)
+    # Actuateur
+    P_act = float(puissance_var.get())
+    duree_act = float(duree_var.get())
+    if frame*dt <= duree_act:
+        for act in actuateurs:
+            i, j = act['position']
+            T_new[i, j] += (P_act * dt) / (rho * cp * volume)
+
+    # Perturbation
+    P_pert = float(perturbation_var.get())
+    duree_pert = float(perturb_duree_var.get())
+    i_p = get_valid_int(perturb_x_var.get(), 0)
+    j_p = get_valid_int(perturb_y_var.get(), 0)
+    if frame*dt <= duree_pert:
+        T_new[i_p, j_p] += (P_pert * dt) / (rho * cp * volume)
 
     T[:, :] = T_new[:, :]
 
-
 #fc de mise à jour animation
 def update(frame):
-    global surf
-    update_temp()
+    update_temp(frame)
     im.set_data(T)
-    im.autoscale()
-
-    surf.remove()
-    surf = ax2.plot_surface(X, Y, T.T, cmap=cmap)
+    ax2.clear()
+    ax2.plot_surface(X, Y, T.T, cmap=cmap)
+    ax2.set_title("Distribution de Température 3D")  # Ajout du titre
 
     time_vector.append(frame * dt)
-    if len(time_vector) > 300:
-        time_vector.pop(0)
-        for name in temperature_points:
-            temperature_points[name].pop(0)
-
     for name, pos in params['points_suivi'].items():
         temperature_points[name].append(T[pos[0], pos[1]])
         temperature_lines[name].set_data(time_vector, np.array(temperature_points[name]) - 273)
 
     ax3.relim()
     ax3.autoscale_view()
-    return [im, surf, ax3]
+    return [im, ax2, ax3]
 
-ani = FuncAnimation(fig, update, frames=Nt // 500, interval=50, blit=False)
-
+ani = FuncAnimation(fig, update, frames=Nt, interval=100, blit=False)
 
 def start_simulation():
     plt.show()
@@ -189,5 +219,3 @@ def start_simulation():
 start_button.config(command=start_simulation)
 
 root.mainloop()
-
-
