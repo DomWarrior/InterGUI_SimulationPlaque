@@ -6,6 +6,7 @@ import json
 import tkinter as tk
 from tkinter import ttk
 
+
 #charge les paramètres à partir du fichier JSON
 with open('simulation_parametres.json', 'r') as f:
     params = json.load(f)
@@ -68,6 +69,8 @@ puissance_slider.pack()
 
 
 
+
+
 #bouton démarrage
 start_button = ttk.Button(root, text="Démarrer la simulation")
 start_button.pack()
@@ -81,7 +84,14 @@ cmap = plt.get_cmap('PuRd')
 
 #graphiques
 im = ax1.imshow(T, cmap=cmap, interpolation='nearest')
+ax1.set_xlabel("X (mm)")
+ax1.set_ylabel("Y (mm)")
+
 surf = ax2.plot_surface(X, Y, T.T, cmap=cmap)
+ax2.set_xlabel("X (mm)")
+ax2.set_ylabel("Y (mm)")
+ax2.set_zlabel("Température (K)")
+
 time_vector = []
 
 #très important : ne pas changer ;) ahahhaha
@@ -151,13 +161,13 @@ def update(frame):
     global surf
     update_temp()
     im.set_data(T)
-    
-    # Supprimer la surface précédente
+    im.autoscale()
+
     surf.remove()
     surf = ax2.plot_surface(X, Y, T.T, cmap=cmap)
 
     time_vector.append(frame * dt)
-    if len(time_vector) > 300:  # Limiter la taille pour éviter les ralentissements
+    if len(time_vector) > 300:
         time_vector.pop(0)
         for name in temperature_points:
             temperature_points[name].pop(0)
@@ -170,7 +180,7 @@ def update(frame):
     ax3.autoscale_view()
     return [im, surf, ax3]
 
-ani = FuncAnimation(fig, update, frames=Nt//100, interval=50, blit=False)
+ani = FuncAnimation(fig, update, frames=Nt // 500, interval=50, blit=False)
 
 
 def start_simulation():
@@ -179,3 +189,5 @@ def start_simulation():
 start_button.config(command=start_simulation)
 
 root.mainloop()
+
+
