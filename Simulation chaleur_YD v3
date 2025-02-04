@@ -77,7 +77,7 @@ vol = dx*dy*e
 
 # Calcul des paramètres utile à la simulation
 a = k/(cp*p)
-dt = min((dx**2)/(8*a), (dy**2)/(8*a))
+dt = 0.001
 Nt = int(temps_simulation/dt)
 T_min = 293.15
 T_max = 350
@@ -202,6 +202,7 @@ temp_therm_1 = []
 temp_therm_2 = []
 temp_therm_laser = []
 Energie_list = []
+current_time = 0
 
 
 
@@ -223,7 +224,9 @@ Energie_list = []
 
 
 # Nombre d'images pour les animations
-n_frames = Nt
+n_frames = int(temps_simulation / (1000 * dt))
+print(n_frames)
+frame_count = 0  # Compteur de frames
 
 #Animation 
 
@@ -289,8 +292,18 @@ def animate_2D():               #Animation 2D de la chaleur
 
     def update(frame):                          #Fonction appelee a chaque image (frame) lors de l'animation. Frame indique le numero 
                                                 #de la frame en cours d'utilisation
-        global T, Times
-        for _ in range(100):                                #comme tantot, on permet de modifier la varaible globat T
+        global T, current_time, frame_count
+
+
+        if current_time >= temps_simulation:
+            print(f"Simulation arrêtée à {current_time:.2f} s après {frame_count} frames.")
+            anim.event_source.stop()  # Arrête l'animation
+            return [im]
+        
+
+
+        frame_count += 1
+        for _ in range(1000):                                #comme tantot, on permet de modifier la varaible globat T
             T = vector_evolution_temperature(       #Calcule la nouvelle distribution de la temperature sur la plaque
                 T,
                 pos_ac=pos_ac, nx_ac=nx_ac, ny_ac=ny_ac, P_ac=P_ac,
@@ -308,6 +321,7 @@ def animate_2D():               #Animation 2D de la chaleur
             # Bilan d'énergie : E(t) = p*cp * somme(T(i,j))* vol
             E_current = p * cp * np.sum(T) * vol
             Energie_list.append(E_current)
+            current_time += dt
         return [im]                                 # on retourne le graphique mis a jour et sous forme de liste (FuncAnimation a besoin de cela)
 
 
@@ -322,12 +336,13 @@ def animate_2D():               #Animation 2D de la chaleur
     anim = FuncAnimation(                           # c'est ici qu'on cree l'animation. Par convention, on utilise la variable anim pour stocker cela
         fig,                                        # fig est la figure a animer (contient im)
         func=update,                                # func : c'est la fonction utiliser pour mettre a jour l'animation (ici , c'est update)
-        frames=n_frames//100,                       #nombre de frames a afficher 
+        frames=n_frames,                       #nombre de frames a afficher 
         init_func=init,                             # Fonction d'initialisation
         blit=True,
         interval=50                                 #temps entre l'affichage de chaque image
     )
     plt.show()
+    print(f"Nombre total de frames traités : {frame_count}")
 
 
 
@@ -416,7 +431,7 @@ def animate_3D():
     def update(frame):
         global T, surf  
 
-        for _ in range(100):                #meme chose que pour Animation 2D
+        for _ in range(10):                #meme chose que pour Animation 2D
             T = vector_evolution_temperature(
                 T,
                 pos_ac=pos_ac, nx_ac=nx_ac, ny_ac=ny_ac, P_ac=P_ac,
@@ -488,23 +503,6 @@ def animate_3D():
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def save_results(filename="resultats_simulation.json"):
     results = {
         "temp_therm_1": temp_therm_1,
@@ -514,23 +512,6 @@ def save_results(filename="resultats_simulation.json"):
     }
     with open(filename, 'w') as file:
         json.dump(results, file, indent=4)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -554,4 +535,44 @@ while True:
         animate_2D()
     else:
         print("Choix invalide. Veuillez entrer '2D', '3D' ou 'q'.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
