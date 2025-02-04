@@ -10,8 +10,8 @@
       "e": 0.0015
     },
     "convection": {
-      "T_air": 523.15,
-      "h": 20
+      "T_air": 293.15 ,
+      "h": 5
     },
     "discretisation": {
       "n_x": 120,
@@ -19,11 +19,11 @@
     },
     "simulation": {
       "temps_simulation": 500,
-      "P_ac": 1,
+      "P_ac": 50,
       "pos_ac": [30, 60],
       "nx_ac": 10,
       "ny_ac": 10,
-      "P_pert": 0,
+      "P_pert": 10,
       "pos_pert": [60, 60],
       "nx_pert": 5,
       "ny_pert": 5
