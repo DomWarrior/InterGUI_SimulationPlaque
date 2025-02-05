@@ -46,7 +46,7 @@ Label.pack()
 
 
 
-with open('paramètres_simulation.json', 'r') as f:
+with open('parametres_simulation.json', 'r') as f:
     params = json.load(f)
 
 
