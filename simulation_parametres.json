@@ -1,26 +1,47 @@
 {
-    "TempsTotal": 10,
-    "Lx": 0.12,
-    "Ly": 0.06,
-    "Nx": 50,
-    "Ny": 25,
+  "proprietes_thermiques": {
     "k": 205,
     "rho": 2700,
-    "cp": 900,
-    "h_conv": 15,
+    "cp": 900
+  },
+  "dimensions_plaque": {
+    "Lx": 0.12,
+    "Ly": 0.06,
+    "epaisseur": 0.001
+  },
+  "convection": {
+    "T_air": 253.15,
+    "h_conv": 500
+  },
+  "discretisation": {
+    "Nx": 120,
+    "Ny": 120
+  },
+  "autre": {
+    "TempsTotal": 10,
     "Temp_ambiante": 293.15,
-    "epaisseur": 0.001,
     "Temp_init": 298.15,
     "actuateurs": [
-      {"position": [10, 10], "puissance": 500}
+      { "position": [10, 10], "puissance": 500 }
     ],
     "perturbations": [
-      {"position": [20, 15], "puissance": 100}
+      { "position": [20, 15], "puissance": 100 }
     ],
     "points_suivi": {
       "laser": [10, 10],
       "milieu": [25, 12],
       "actuateur": [37, 18]
     }
+  },
+  "simulation": {
+    "temps_simulation": 100,
+    "P_ac": 2,
+    "pos_ac": [30, 60],
+    "nx_ac": 10,
+    "ny_ac": 10,
+    "P_ert": 0,
+    "pos_pert": [60, 60],
+    "nx_pert": 5,
+    "ny_pert": 5
   }
-  
+}

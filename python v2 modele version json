@@ -11,40 +11,42 @@ import threading
 with open('simulation_parametres.json', 'r') as f:
     params = json.load(f)
 
-TempsTotal = params['TempsTotal']  #temps de simulation
+TempsTotal = params['autre']['TempsTotal']  #temps de simulation
 
 #paramètres à confirmer plaque dimension
-Lx, Ly = 12e-3, 6e-3  #dimensions plaque en m
-Nx, Ny = params['Nx'], params['Ny'] #nb elements
+Lx = params['dimensions_plaque']['Lx']  #dimensions plaque en m
+Ly = params['dimensions_plaque']['Ly']
+Nx = params['discretisation']['Nx'] #nb elements
+Ny = params['discretisation']['Ny']
 
 #propriétés physiques et matériau aluminium
-k = params['k']  #conductivité thermique en W/m·K
-rho = params['rho']  #densité en kg/m^3
-cp = params['cp']  #chaleur spécifique en J/kg·K
+k = params['proprietes_thermiques']['k']  #conductivité thermique en W/m·K
+rho = params['proprietes_thermiques']['rho']  #densité en kg/m^3
+cp = params['proprietes_thermiques']['cp']  #chaleur spécifique en J/kg·K
 alpha = k / (rho * cp)  #diffusivité thermique m^2/s
-h_conv = params['h_conv']  # coeff de convection en W/m^2·K
-Temp_ambiante = params['Temp_ambiante']  #température ambiante en K
+h_conv = params['convection']['h_conv']  # coeff de convection en W/m^2·K
+Temp_ambiante = params['autre']['Temp_ambiante']  #température ambiante en K
 
 #discrétisation
 dx, dy = Lx / Nx, Ly / Ny
-epaisseur = params['epaisseur']  #epaisseur plaque en m
+epaisseur = params['dimensions_plaque']['epaisseur']  #epaisseur plaque en m
 volume = dx * dy * epaisseur
 
 dt = min(dx**2, dy**2) / (8 * alpha)
 Nt = int(TempsTotal / dt)
 
 #C.I.
-Temp_init = params['Temp_init']  # 298 K = 25°C
+Temp_init = params['autre']['Temp_init']  # 298 K = 25°C
 T = np.full((Nx, Ny), Temp_init)
 coeff = (h_conv * dt)/(rho * cp)
-T_air = 273.15 - 20 # K
+T_air = params['convection']['T_air'] # K
 
 #sources de chaleur
-actuateurs = params['actuateurs']
-perturbations = params['perturbations']
+actuateurs = params['autre']['actuateurs']
+perturbations = params['autre']['perturbations']
 
 #temp.
-temperature_points = {name: [] for name in params['points_suivi']}
+temperature_points = {name: [] for name in params['autre']['points_suivi']}
 
 #construction grilles
 x = np.linspace(0, Lx * 1e3, Nx)
@@ -124,7 +126,7 @@ time_vector = []
 temperature_lines = {}
 rose_colors = ['deeppink', 'blue', 'mediumvioletred', 'orchid', 'red'] #DO NOT CHANGE, WILL FAIL TO COMPUTE
 
-for (name, _), color in zip(params['points_suivi'].items(), rose_colors):
+for (name, _), color in zip(params['autre']['points_suivi'].items(), rose_colors):
     line, = ax3.plot([], [], label=name, color=color)
     temperature_lines[name] = line
 
