@@ -146,35 +146,35 @@ def update_temp(frame):
     T_new = T.copy()
     #T_new += coeff * (T_air - T_new)
     # Conduction éléments centraux
-    T_new[1:-1,1:-1] = T[1:-1, 1:-1] + alpha*dt*((T[2:,1:-1]-2*T[1:-1, 1:-1] +T[0:-2, 1:-1])/(dx**2) +
-                                           (T[1:-1,2:]-2*T[1:-1, 1:-1] +T[1:-1, 0:-2])/(dy**2))
+    T_new[1:-1,1:-1] = T[1:-1, 1:-1] + alpha*dt*((T[2:,1:-1]-2*T[1:-1, 1:-1] +T[0:-2, 1:-1])/(dy**2) +
+                                           (T[1:-1,2:]-2*T[1:-1, 1:-1] +T[1:-1, 0:-2])/(dx**2))
 
     #conduction bords et coins
-    T_new[0, 1:-1] += alpha * dt * ((T[1, 1:-1] - T[0, 1:-1]) / dx**2 +
-                               (T[0, 2:] - 2 * T[0, 1:-1] + T[0, :-2]) / dy**2)
+    T_new[0, 1:-1] += alpha * dt * ((T[1, 1:-1] - T[0, 1:-1]) / dy**2 +
+                               (T[0, 2:] - 2 * T[0, 1:-1] + T[0, :-2]) / dx**2)
 
-    T_new[-1, 1:-1] += alpha * dt * ((T[-2, 1:-1] - T[-1, 1:-1]) / dx**2 +
-                                (T[-1, 2:] - 2 * T[-1, 1:-1] + T[-1, :-2]) / dy**2)
+    T_new[-1, 1:-1] += alpha * dt * ((T[-2, 1:-1] - T[-1, 1:-1]) / dy**2 +
+                                (T[-1, 2:] - 2 * T[-1, 1:-1] + T[-1, :-2]) / dx**2)
 
-    T_new[1:-1, 0] += alpha * dt * ((T[2:, 0] - 2 * T[1:-1, 0] + T[:-2, 0]) / dx**2 +
-                               (T[1:-1, 1] - T[1:-1, 0]) / dy**2)
+    T_new[1:-1, 0] += alpha * dt * ((T[2:, 0] - 2 * T[1:-1, 0] + T[:-2, 0]) / dy**2 +
+                               (T[1:-1, 1] - T[1:-1, 0]) / dx**2)
 
-    T_new[1:-1, -1] += alpha * dt * ((T[2:, -1] - 2 * T[1:-1, -1] + T[:-2, -1]) / dx**2 +
-                                (T[1:-1, -2] - T[1:-1, -1]) / dy**2)
+    T_new[1:-1, -1] += alpha * dt * ((T[2:, -1] - 2 * T[1:-1, -1] + T[:-2, -1]) / dy**2 +
+                                (T[1:-1, -2] - T[1:-1, -1]) / dx**2)
 
     # Coins
-    T_new[0, 0] += alpha * dt * ((T[1, 0] - T[0, 0]) / dx**2 + (T[0, 1] - T[0, 0]) / dy**2)
-    T_new[0, -1] += alpha * dt * ((T[1, -1] - T[0, -1]) / dx**2 + (T[0, -2] - T[0, -1]) / dy**2)
-    T_new[-1, 0] += alpha * dt * ((T[-2, 0] - T[-1, 0]) / dx**2 + (T[-1, 1] - T[-1, 0]) / dy**2)
-    T_new[-1, -1] += alpha * dt * ((T[-2, -1] - T[-1, -1]) / dx**2 + (T[-1, -2] - T[-1, -1]) / dy**2)
+    T_new[0, 0] += alpha * dt * ((T[1, 0] - T[0, 0]) / dx**2 + (T[0, 1] - T[0, 0]) / dx**2)
+    T_new[0, -1] += alpha * dt * ((T[1, -1] - T[0, -1]) / dx**2 + (T[0, -2] - T[0, -1]) / dx**2)
+    T_new[-1, 0] += alpha * dt * ((T[-2, 0] - T[-1, 0]) / dx**2 + (T[-1, 1] - T[-1, 0]) / dx**2)
+    T_new[-1, -1] += alpha * dt * ((T[-2, -1] - T[-1, -1]) / dx**2 + (T[-1, -2] - T[-1, -1]) / dx**2)
 
     # Convection
     Coeff = (h_conv*dt)/(rho*cp)
-    T_new[0, :] += Coeff*(T_air-T_new[0,:])*((epaisseur*dx)/(volume))     # haut
-    T_new[-1, :] += Coeff*(T_air-T_new[-1,:])*((epaisseur*dx)/(volume))   # bas
-    T_new[:,0] += Coeff*(T_air-T_new[:,0])*((epaisseur*dy)/(volume))      # gauche
-    T_new[:,-1] += Coeff*(T_air-T_new[:,-1])*((epaisseur*dy)/(volume))    # droite
-    T_new[:,:] += 2*Coeff*(T_air-T_new[:,:])*((dx*dy)/volume)      # dessus/dessous
+    T_new[0, :] += Coeff*(T_air-T[0,:])*((epaisseur*dx)/(volume))     # haut
+    T_new[-1, :] += Coeff*(T_air-T[-1,:])*((epaisseur*dx)/(volume))   # bas
+    T_new[:,0] += Coeff*(T_air-T[:,0])*((epaisseur*dy)/(volume))      # gauche
+    T_new[:,-1] += Coeff*(T_air-T[:,-1])*((epaisseur*dy)/(volume))    # droite
+    T_new[:,:] += 2*Coeff*(T_air-T[:,:])*((dx*dy)/volume)      # dessus/dessous
 
     # Actuateur
     P_act = float(puissance_var.get())

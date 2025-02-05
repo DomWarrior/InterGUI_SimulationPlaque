@@ -1,7 +1,7 @@
 {
-    "TempsTotal": 50,
-    "Lx": 0.1,
-    "Ly": 0.05,
+    "TempsTotal": 10,
+    "Lx": 0.12,
+    "Ly": 0.06,
     "Nx": 50,
     "Ny": 25,
     "k": 205,
@@ -9,7 +9,7 @@
     "cp": 900,
     "h_conv": 15,
     "Temp_ambiante": 293.15,
-    "epaisseur": 0.0015,
+    "epaisseur": 0.001,
     "Temp_init": 298.15,
     "actuateurs": [
       {"position": [10, 10], "puissance": 500}
