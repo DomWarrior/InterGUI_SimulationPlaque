@@ -275,7 +275,7 @@ def animate_2D():               #Animation 2D de la chaleur
     fig, ax = plt.subplots()    #on cree une figure (fenêtre dans laquelle le graphique sera affiché)  et un axe (ax) pour le graphique
     im = ax.imshow(               #imshow est une fonction de ax qui affiche la température sous forme de carte thermique 
         T,                         #La matrice qui sera affichée (temp plaque)
-        cmap='hot',                 #spécifie le barème de couleur utilisé pour la coloration du graphique
+        cmap='jet',                 #spécifie le barème de couleur utilisé pour la coloration du graphique
         interpolation='nearest',    #façon dont les couleurs sont inerpolées entre les pixels : 'nearest' : Aucun issage
         origin='lower',             #defini l'origine de la grille (0,0): lower = en bas a gauche
         animated=True,              #pour optimiser les animations avec FuncAnimation
@@ -312,9 +312,9 @@ def animate_2D():               #Animation 2D de la chaleur
             im.set_data(T)                          #on remet a jour la matrice de temperature
 
             #Suivre la température en un point sur la plaque dans la simulation 2D
-            thermistance_1 = T[n_y//4, n_x//2]
-            thermistance_2 = T[n_y//2, n_x//2]   # On recolte Recolte temperature a cette position 
-            thermistance_laser = T[80, n_x//2]
+            thermistance_1 = T[30, 15]
+            thermistance_2 = T[30, 60]   # On recolte Recolte temperature a cette position 
+            thermistance_laser = T[30, 105]
             temp_therm_1.append(thermistance_1)  # on rajoute dans la liste
             temp_therm_2.append(thermistance_2)
             temp_therm_laser.append(thermistance_laser)
@@ -413,7 +413,7 @@ def animate_3D():
 
     # Définir surf comme variable globale
     global surf     
-    surf = ax.plot_surface(X, Y, T, cmap='hot', vmin=T_min, vmax=T_max)
+    surf = ax.plot_surface(X, Y, T, cmap='jet', vmin=T_min, vmax=T_max)
 
     # Colorbar associée à la surface
     cbar = plt.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
