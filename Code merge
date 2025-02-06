@@ -543,28 +543,36 @@ while True:
 
 
 
-#fc de mise à jour animation
-def update(frame):
-    update_temp(frame)
-    im.set_data(T)
-    ax2.clear()
-    ax2.plot_surface(X, Y, T.T, cmap=cmap)
-    ax2.set_title("Distribution de Température 3D")  # Ajout du titre
 
-    time_vector.append(frame * dt)
-    for name, pos in params['points_suivi'].items():
-        temperature_points[name].append(T[pos[0], pos[1]])
-        temperature_lines[name].set_data(time_vector, np.array(temperature_points[name]) - 273)
 
-    ax3.relim()
-    ax3.autoscale_view()
-    return [im, ax2, ax3]
 
-ani = FuncAnimation(fig, update, frames=Nt, interval=100, blit=False)
 
-def start_simulation():
-    plt.show()
 
-start_button.config(command=start_simulation)
 
-root.mainloop()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
