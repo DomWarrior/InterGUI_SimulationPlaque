@@ -1,0 +1,164 @@
+import sys
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.animation import FuncAnimation
+import json
+
+# Importer les fonctions de votre code original
+from sim3 import  vector_evolution_temperature
+
+class ThermalVisualizerWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Visualisation Thermique")
+        self.setGeometry(100, 100, 1200, 600)
+
+        # Widget principal
+        main_widget = QWidget()
+        self.setCentralWidget(main_widget)
+        
+        # Layout horizontal principal
+        layout = QHBoxLayout(main_widget)
+        
+        # Création des conteneurs pour les graphiques
+        self.thermal_fig = Figure(figsize=(6, 6))
+        self.temp_fig = Figure(figsize=(6, 6))
+        
+        # Canvas pour les graphiques
+        self.thermal_canvas = FigureCanvas(self.thermal_fig)
+        self.temp_canvas = FigureCanvas(self.temp_fig)
+        
+        # Ajout des canvas au layout
+        layout.addWidget(self.thermal_canvas)
+        layout.addWidget(self.temp_canvas)
+        
+        # Initialisation des paramètres
+        self.initialize_parameters()
+        
+        # Création des axes
+        self.thermal_ax = self.thermal_fig.add_subplot(111)
+        self.temp_ax = self.temp_fig.add_subplot(111)
+        
+        # Initialisation des données
+        self.T = np.ones((self.n_x, self.n_y)) * 293.15
+        
+        # Initialisation des listes pour les températures
+        self.times = []
+        self.temp_therm_1 = []
+        self.temp_therm_2 = []
+        self.temp_therm_laser = []
+        
+        # Création de l'animation thermique
+        self.im = self.thermal_ax.imshow(
+            self.T,
+            cmap='hot',
+            interpolation='nearest',
+            origin='lower',
+            animated=True,
+            vmin=293.15,
+            vmax=315
+        )
+        self.thermal_fig.colorbar(self.im, ax=self.thermal_ax, label='Température (K)')
+        
+        # Initialisation des lignes de température
+        self.time_data = np.array([])
+        self.temp1_line, = self.temp_ax.plot([], [], 'r-', label='Thermistance 1')
+        self.temp2_line, = self.temp_ax.plot([], [], 'b-', label='Thermistance 2')
+        self.temp3_line, = self.temp_ax.plot([], [], 'g-', label='Thermistance 3')
+        
+        self.temp_ax.set_xlabel('Temps (s)')
+        self.temp_ax.set_ylabel('Température (K)')
+        self.temp_ax.legend()
+        self.temp_ax.grid(True)
+        
+        # Animation
+        self.anim = FuncAnimation(
+            self.thermal_fig,
+            self.update,
+            init_func=self.init_animation,
+            frames=None,
+            interval=50,
+            blit=True
+        )
+
+    def initialize_parameters(self):
+        # Chargement des paramètres depuis le fichier JSON
+        with open('paramètres_simulation.json', 'r') as f:
+            params = json.load(f)
+        
+        # Attribution des paramètres
+        self.k = params["proprietes_thermiques"]["k"]
+        self.p = params["proprietes_thermiques"]["p"]
+        self.cp = params["proprietes_thermiques"]["cp"]
+        self.Lx = params["dimensions_plaque"]["Lx"]
+        self.Ly = params["dimensions_plaque"]["Ly"]
+        self.e = params["dimensions_plaque"]["e"]
+        self.T_air = params["convection"]["T_air"]
+        self.h = params["convection"]["h"]
+        self.n_x = params["discretisation"]["n_x"]
+        self.n_y = params["discretisation"]["n_y"]
+        self.temps_simulation = params["simulation"]["temps_simulation"]
+        
+        # Calcul des paramètres dérivés
+        self.dx = self.Lx/self.n_x
+        self.dy = self.Ly/self.n_y
+        self.vol = self.dx * self.dy * self.e
+        self.a = self.k/(self.cp*self.p)
+        self.dt = 0.001
+        
+        # Paramètres actuateur
+        self.pos_ac = tuple(params["simulation"]["pos_ac"])
+        self.nx_ac = params["simulation"]["nx_ac"]
+        self.ny_ac = params["simulation"]["ny_ac"]
+        self.P_ac = params["simulation"]["P_ac"]
+        
+        # Paramètres perturbation
+        self.pos_pert = tuple(params["simulation"]["pos_pert"])
+        self.nx_pert = params["simulation"]["nx_pert"]
+        self.ny_pert = params["simulation"]["ny_pert"]
+        self.P_pert = params["simulation"]["P_pert"]
+
+    def init_animation(self):
+        self.im.set_array(self.T)
+        return [self.im, self.temp1_line, self.temp2_line, self.temp3_line]
+
+    def update(self, frame):
+        for _ in range(10):  # Réduire le nombre d'itérations pour une meilleure performance
+            self.T = vector_evolution_temperature(
+                self.T,
+                self.pos_ac, self.nx_ac, self.ny_ac, self.P_ac,
+                self.pos_pert, self.nx_pert, self.ny_pert, self.P_pert
+            )
+            
+            # Mise à jour des températures
+            self.times.append(len(self.times) * self.dt)
+            self.temp_therm_1.append(self.T[30, 15])
+            self.temp_therm_2.append(self.T[30, 60])
+            self.temp_therm_laser.append(self.T[30, 105])
+
+        # Mise à jour de l'image thermique
+        self.im.set_array(self.T)
+        
+        # Mise à jour des graphiques de température
+        self.temp1_line.set_data(self.times, self.temp_therm_1)
+        self.temp2_line.set_data(self.times, self.temp_therm_2)
+        self.temp3_line.set_data(self.times, self.temp_therm_laser)
+        
+        # Ajustement automatique des axes
+        self.temp_ax.relim()
+        self.temp_ax.autoscale_view()
+        self.temp_fig.canvas.draw_idle()
+        
+        return [self.im, self.temp1_line, self.temp2_line, self.temp3_line]
+
+def main():
+    app = QApplication(sys.argv)
+    window = ThermalVisualizerWindow()
+    window.show()
+    sys.exit(app.exec())
+
+if __name__ == '__main__':
+    main()
