@@ -311,7 +311,11 @@ def animate_2D():               #Animation 2D de la chaleur
 
 
         frame_count += 1
-        for _ in range(1000):                                #comme tantot, on permet de modifier la varaible globat T
+
+        #nb iterations necessaire pour simuler une seconde réelle
+        iterations_per_second = int(1 / dt) 
+
+        for _ in range(iterations_per_second):                                #comme tantot, on permet de modifier la varaible globat T
             T = vector_evolution_temperature(       #Calcule la nouvelle distribution de la temperature sur la plaque
                 T,
                 pos_ac=pos_ac, nx_ac=nx_ac, ny_ac=ny_ac, P_ac=P_ac,
@@ -333,7 +337,9 @@ def animate_2D():               #Animation 2D de la chaleur
         # Bilan d'énergie : E(t) = p*cp * somme(T(i,j))* vol
         E_current = p * cp * np.sum(T) * vol
         Energie_list.append(E_current)
-        current_time += dt
+
+        current_time += 1
+        ax.set_title(f"Évolution 2D de la température - Temps simulé : {current_time:.2f} s")
         
         return [im]                                 # on retourne le graphique mis a jour et sous forme de liste (FuncAnimation a besoin de cela)
 
@@ -345,10 +351,10 @@ def animate_2D():               #Animation 2D de la chaleur
     anim = FuncAnimation(                           # c'est ici qu'on cree l'animation. Par convention, on utilise la variable anim pour stocker cela
         fig,                                        # fig est la figure a animer (contient im)
         func=update,                                # func : c'est la fonction utiliser pour mettre a jour l'animation (ici , c'est update)
-        frames=n_frames,                       #nombre de frames a afficher 
+        frames=int(temps_simulation),                       #nombre de frames a afficher 
         init_func=init,                             # Fonction d'initialisation
         blit=True,
-        interval=50                                 #temps entre l'affichage de chaque image
+        interval=1000                                 #temps entre l'affichage de chaque image
     )
 
     plt.colorbar(im, ax=ax, label='Température (K)')            #on cree notre figure avec matplotlib avec im 
@@ -449,9 +455,11 @@ def animate_3D():
 
 
     def update(frame):
-        global T, surf  
+        global T, surf, current_time
 
-        for _ in range(10):
+        iterations_per_second = int(1 / dt) 
+
+        for _ in range(iterations_per_second):
             T = vector_evolution_temperature(
                 T,
                 pos_ac=pos_ac, nx_ac=nx_ac, ny_ac=ny_ac, P_ac=P_ac,
@@ -465,7 +473,8 @@ def animate_3D():
         colors = cm.inferno(norm(T)) 
         surf = ax.plot_surface(X, Y, T, facecolors=colors, rstride=1, cstride=1)
 
-        ax.set_title(f"Temps simulé : {frame * dt * 100:.2f} s")
+        current_time += 1
+        ax.set_title(f"Temps simulé : {current_time:.2f} s")
         
 
 
@@ -497,15 +506,22 @@ def animate_3D():
     anim = FuncAnimation(              #meme chose que pour Animation 3D
             fig,
             func=update,
-            frames=n_frames // 100,  
+            frames=int(temps_simulation),  
             init_func=init,
-            interval=50,
+            interval=1000,
             blit=False
         )
     plt.show()
 
 
-    times = np.arange(len(temp_therm_1))*dt  # approx le temps (chq frame => dt)
+    if len(temp_therm_1) == 0 or len(Energie_list) == 0:
+        print("Erreur : Les listes de températures et d'énergie sont vides.")
+        return  # Sortie anticipée pour éviter un affichage vide
+
+
+    step = max(1, len(temp_therm_1) // 100)
+    times = np.arange(len(temp_therm_1)) * dt  # approx le temps (chq frame => dt)
+     
     
     fig2, ax2 = plt.subplots()
 
@@ -618,41 +634,4 @@ btn_lancer.pack(pady=20)
 
 # Lancer la boucle principale Tkinter
 root.mainloop()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
