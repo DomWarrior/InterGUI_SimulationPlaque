@@ -1,36 +1,31 @@
 {
-    "proprietes_thermiques": {
-      "k": 205,
-      "p": 2700,
-      "cp": 900
-    },
-    "dimensions_plaque": {
-      "Lx": 0.12,
-      "Ly": 0.12,
-      "e": 0.0015
-    },
-    "convection": {
-      "T_air": 293.15 ,
-      "h": 5
-      "T_air": 253.15 ,
-      "h": 500
-    },
-    "discretisation": {
-      "n_x": 120,
-      "n_y": 120
-    },
-    "simulation": {
-      "temps_simulation": 500,
-      "P_ac": 50,
-      "temps_simulation": 100,
-      "P_ac": 2,
-      "pos_ac": [30, 60],
-      "nx_ac": 10,
-      "ny_ac": 10,
-      "P_pert": 10,
-      "P_pert": 0,
-      "pos_pert": [60, 60],
-      "nx_pert": 5,
-      "ny_pert": 5
-    }
+  "proprietes_thermiques": {
+    "k": 205,
+    "p": 2700,
+    "cp": 900
+  },
+  "dimensions_plaque": {
+    "Lx": 0.12,
+    "Ly": 0.12,
+    "e": 0.0015
+  },
+  "convection": {
+    "T_air": 253.15 ,
+    "h": 500
+  },
+  "discretisation": {
+    "n_x": 120,
+    "n_y": 120
+  },
+  "simulation": {
+    "temps_simulation": 100,
+    "P_ac": 2,
+    "pos_ac": [30, 60],
+    "nx_ac": 10,
+    "ny_ac": 10,
+    "P_pert": 0,
+    "pos_pert": [60, 60],
+    "nx_pert": 5,
+    "ny_pert": 5
   }
+}
