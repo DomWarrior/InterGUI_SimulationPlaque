@@ -151,7 +151,7 @@ def vector_evolution_temperature(T, pos_ac, nx_ac, ny_ac, P_ac=None,
     T_new[:,-1] += 1*Coeff*(T_air-T[:,-1])*((dz*dy)/(vol))    # droite
     T_new[:,:] += 2*Coeff*(T_air-T[:,:])*((dx*dy)/vol)      # dessus/dessous  #ici, le coefficient doit etre a 2 si on veut que les 2 surfaces soient soumises a la convection
 
-    # Actuateur
+   # Actuateur
     if P_ac is not None and P_ac > 0:
         i, j = pos_ac
         P_par_element = P_ac/(nx_ac*ny_ac)
@@ -162,7 +162,6 @@ def vector_evolution_temperature(T, pos_ac, nx_ac, ny_ac, P_ac=None,
         k, l = pos_pert
         P_par_element = P_pert/(nx_pert*ny_pert)
         T_new[k-nx_pert//2:k+nx_pert//2, l-ny_pert//2:l+ny_pert//2] += (P_par_element*dt)/(p*cp*vol)
-
 
     return T_new
 
@@ -207,7 +206,7 @@ temp_therm_2 = []
 temp_therm_laser = []
 Energie_list = []
 current_time = 0
-
+Time_ist = []
 
 
 
@@ -328,9 +327,9 @@ def animate_2D():               #Animation 2D de la chaleur
        
 
         #Suivre la température en un point sur la plaque dans la simulation 2D
-        thermistance_1 = T[n_y//4, n_x//2]
-        thermistance_2 = T[n_y//2, n_x//2]   # On recolte Recolte temperature a cette position 
-        thermistance_laser = T[80, n_x//2]
+        thermistance_1 = T[30, 15]
+        thermistance_2 = T[30, 60]   # On recolte Recolte temperature a cette position 
+        thermistance_laser = T[30, 105]
         temp_therm_1.append(thermistance_1)  # on rajoute dans la liste
         temp_therm_2.append(thermistance_2)
         temp_therm_laser.append(thermistance_laser)
@@ -479,9 +478,9 @@ def animate_3D():
 
 
      #       #Suivre la température en un point sur la plaque dans la simulation 2D
-        thermistance_1 = T[n_y//4, n_x//2]
-        thermistance_2 = T[n_y//2, n_x//2]   # On recolte Recolte temperature a cette position 
-        thermistance_laser = T[80, n_x//2]
+        thermistance_1 = T[30, 15]
+        thermistance_2 = T[30, 60]
+        thermistance_laser = T[30, 105]
         temp_therm_1.append(thermistance_1)  # on rajoute dans la liste
         temp_therm_2.append(thermistance_2)
         temp_therm_laser.append(thermistance_laser)
