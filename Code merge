@@ -430,7 +430,7 @@ def animate_3D():
     
     x = np.linspace(0, Lx, n_x)             #nombre de cases en x
     y = np.linspace(0, Ly, n_y)             #nombre de cases en y
-    X, Y = np.meshgrid(x, y)                # on cree la grille 2D
+    X, Y = np.meshgrid(y, x)                # on cree la grille 2D
 
     fig = plt.figure(figsize=(10, 8))       #on cree la figure plt
     ax = fig.add_subplot(111, projection='3d')      #on met les cadrans
@@ -477,7 +477,7 @@ def animate_3D():
         
 
 
-     #       #Suivre la température en un point sur la plaque dans la simulation 2D
+     # Suivre la température en un point sur la plaque dans la simulation 2D
         thermistance_1 = T[30, 15]
         thermistance_2 = T[30, 60]
         thermistance_laser = T[30, 105]
