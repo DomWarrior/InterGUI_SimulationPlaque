@@ -5,24 +5,24 @@
     "cp": 900
   },
   "dimensions_plaque": {
-    "Lx": 0.12,
+    "Lx": 0.06,
     "Ly": 0.12,
     "e": 0.0015
   },
   "convection": {
-    "T_air": 253.15 ,
-    "h": 500
+    "T_air": 293.15 ,
+    "h": 10
   },
   "discretisation": {
-    "n_x": 120,
+    "n_x": 60,
     "n_y": 120
   },
   "simulation": {
     "temps_simulation": 100,
-    "P_ac": 2,
-    "pos_ac": [30, 60],
-    "nx_ac": 10,
-    "ny_ac": 10,
+    "P_ac": 1.5,
+    "pos_ac": [30, 15],
+    "nx_ac": 15,
+    "ny_ac": 15,
     "P_pert": 0,
     "pos_pert": [60, 60],
     "nx_pert": 5,
