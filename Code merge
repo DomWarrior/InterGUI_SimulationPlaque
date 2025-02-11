@@ -10,48 +10,8 @@ from matplotlib import cm
 
 
 
-
-#compteur = 0
-
-#def onClick(event):
-#    global compteur
-#    compteur += 1
-#    Label.config(text=f'Compteur : {compteur}')
-
-#Window = tk.Tk()
-
-#bouton = tk.Button(Window, text='Clique ici !', width=50)
-#bouton.pack()
-#bouton.bind('<ButtonRelease-1>', onClick)
-#Label = tk.Label(Window, text='Compteur : 0')
-#Label.pack()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-with open('parametres_simulation.json', 'r') as f:
+with open('parametres_simulationYD.json', 'r') as f:
     params = json.load(f)
-
 
 #Temps de simulation
 temps_simulation = params["simulation"]["temps_simulation"]#temps_simulation = 500  # s
@@ -100,6 +60,24 @@ print((a*dt)/(min(dx**2, dy**2)))                   #Doit être plus petit que 0
 
 
 
+# Conversion des dimensions physiques (mm) en indices
+def real_to_discrete(x_real, y_real):
+    i = int((x_real / params["dimensions_plaque"]["Lx"]) * n_x)  # Conversion en indices pour x
+    j = int((y_real / params["dimensions_plaque"]["Ly"]) * n_y)  # Conversion en indices pour y
+    return i, j
+
+# Lecture des positions depuis le JSON
+pos_ac_real = tuple(params["simulation"]["pos_ac"])  # Actuateur
+thermistances_real = params["simulation"]["thermistances"]  # Liste des thermistances
+
+# Conversion des positions réelles en indices
+pos_ac = real_to_discrete(*[p / 1000 for p in pos_ac_real])  # Actuateur
+thermistances_discrete = [real_to_discrete(*[p / 1000 for p in t]) for t in thermistances_real]
+
+def afficher_temperatures():
+    # Affiche les températures des thermistances en temps réel
+    therm1_label.config(text=f"Thermistance 1: {temp_therm_1[-1]:.2f} K" if temp_therm_1 else "Thermistance 1: ---")
+    therm2_label.config(text=f"Thermistance 2: {temp_therm_2[-1]:.2f} K" if temp_therm_2 else "Thermistance 2: ---")
 
 
 
@@ -151,7 +129,7 @@ def vector_evolution_temperature(T, pos_ac, nx_ac, ny_ac, P_ac=None,
     T_new[:,-1] += 1*Coeff*(T_air-T[:,-1])*((dz*dy)/(vol))    # droite
     T_new[:,:] += 2*Coeff*(T_air-T[:,:])*((dx*dy)/vol)      # dessus/dessous  #ici, le coefficient doit etre a 2 si on veut que les 2 surfaces soient soumises a la convection
 
-   # Actuateur
+    # Actuateur
     if P_ac is not None and P_ac > 0:
         i, j = pos_ac
         P_par_element = P_ac/(nx_ac*ny_ac)
@@ -162,6 +140,7 @@ def vector_evolution_temperature(T, pos_ac, nx_ac, ny_ac, P_ac=None,
         k, l = pos_pert
         P_par_element = P_pert/(nx_pert*ny_pert)
         T_new[k-nx_pert//2:k+nx_pert//2, l-ny_pert//2:l+ny_pert//2] += (P_par_element*dt)/(p*cp*vol)
+
 
     return T_new
 
@@ -206,7 +185,7 @@ temp_therm_2 = []
 temp_therm_laser = []
 Energie_list = []
 current_time = 0
-Time_ist = []
+
 
 
 
@@ -289,12 +268,21 @@ def animate_2D():               #Animation 2D de la chaleur
         vmin=T_min,
         vmax=T_max
     )
+
     
 
-    def init():                 #Fonciton necessaire pour FuncAnimation de Matplotlib ... FuncAnimation(fig, func=update, frames=n_frames, init_func=init, blit=True)
-                                # Elle sert a initialiser la figure avec de start l'anim
-        im.set_data(T)          #im est l'objet retourne par ax.imshow() (la carte thermique) et set les donnees avec ce de T
-        return [im]             #on retourne une liste de l'objet im
+    def init():
+        ax.set_xlabel("x (m)")
+        ax.set_ylabel("y (m)")
+        ax.set_title("Évolution de la température (2D)")
+        # Visualiser les positions de l'actuateur et des thermistances
+        ax.plot([pos_ac[1]], [pos_ac[0]], 'ro', label='Actuateur')  # Actuateur en rouge
+        for idx, therm in enumerate(thermistances_discrete):
+            ax.plot([therm[1]], [therm[0]], 'go', label=f'Thermistance {idx + 1}')  # Thermistances en vert
+        ax.legend()
+        im.set_data(T)
+        return [im]            #on retourne une liste de l'objet im
+
 
 
     def update(frame):                          #Fonction appelee a chaque image (frame) lors de l'animation. Frame indique le numero 
@@ -310,35 +298,31 @@ def animate_2D():               #Animation 2D de la chaleur
 
 
         frame_count += 1
-
-        #nb iterations necessaire pour simuler une seconde réelle
-        iterations_per_second = int(1 / dt) 
-
-        for _ in range(iterations_per_second):                                #comme tantot, on permet de modifier la varaible globat T
-            T = vector_evolution_temperature(       #Calcule la nouvelle distribution de la temperature sur la plaque
-                T,
-                pos_ac=pos_ac, nx_ac=nx_ac, ny_ac=ny_ac, P_ac=P_ac,
-                pos_pert=pos_pert, nx_pert=nx_pert, ny_pert=ny_pert, P_pert=P_pert
-            )
+        for _ in range(1000):                                #comme tantot, on permet de modifier la varaible globat T
+            T = vector_evolution_temperature(
+            T,
+            pos_ac=pos_ac, nx_ac=nx_ac, ny_ac=ny_ac, P_ac=P_ac,
+            pos_pert=pos_pert, nx_pert=nx_pert, ny_pert=ny_pert, P_pert=P_pert
+        )
         
         im.set_data(T)                          #on remet a jour la matrice de temperature
         im.set_clim(np.min(T), np.max(T))  # Met à jour les couleurs dynamiquement
-       # plt.pause(0.1)  # Petite pause pour forcer la mise à jour graphique
+      
        
 
-        #Suivre la température en un point sur la plaque dans la simulation 2D
-        thermistance_1 = T[30, 15]
-        thermistance_2 = T[30, 60]   # On recolte Recolte temperature a cette position 
-        thermistance_laser = T[30, 105]
+    
+
+        thermistance_1 = T[n_x//4, n_y//2]
+        thermistance_2 = T[n_x//2, n_y//2]   # On recolte Recolte temperature a cette position 
+        thermistance_laser = T[min(80, n_x - 1), n_y // 2]
         temp_therm_1.append(thermistance_1)  # on rajoute dans la liste
         temp_therm_2.append(thermistance_2)
         temp_therm_laser.append(thermistance_laser)
+
         # Bilan d'énergie : E(t) = p*cp * somme(T(i,j))* vol
         E_current = p * cp * np.sum(T) * vol
         Energie_list.append(E_current)
-
-        current_time += 1
-        ax.set_title(f"Évolution 2D de la température - Temps simulé : {current_time:.2f} s")
+        current_time += dt
         
         return [im]                                 # on retourne le graphique mis a jour et sous forme de liste (FuncAnimation a besoin de cela)
 
@@ -350,10 +334,10 @@ def animate_2D():               #Animation 2D de la chaleur
     anim = FuncAnimation(                           # c'est ici qu'on cree l'animation. Par convention, on utilise la variable anim pour stocker cela
         fig,                                        # fig est la figure a animer (contient im)
         func=update,                                # func : c'est la fonction utiliser pour mettre a jour l'animation (ici , c'est update)
-        frames=int(temps_simulation),                       #nombre de frames a afficher 
+        frames=n_frames,                       #nombre de frames a afficher 
         init_func=init,                             # Fonction d'initialisation
         blit=True,
-        interval=1000                                 #temps entre l'affichage de chaque image
+        interval=50                                 #temps entre l'affichage de chaque image
     )
 
     plt.colorbar(im, ax=ax, label='Température (K)')            #on cree notre figure avec matplotlib avec im 
@@ -375,14 +359,13 @@ def animate_2D():               #Animation 2D de la chaleur
     print(times)
     
 
-    #step = 100  # par exemple un point sur 100
     step = max(1, len(temp_therm_1) // 100)
 
     fig2, ax2 = plt.subplots()
     # Tracés des températures des trois thermistances
-    ax2.plot(times[::step], temp_therm_1[::step], linestyle='-', color='r', label='Thermistance 1 (y=80)')   #affiche la température de la thermistance où l'actuateur
-    ax2.plot(times[::step], temp_therm_2[::step], linestyle='--', color='y', label='Thermistance 2 (centre)') #affiche la température de la 2e thermistance.
-    ax2.plot(times[::step], temp_therm_laser[::step], linestyle='-.', color='k', label='Thermistance laser (y=n_y/4)')   #affiche la température de la thermistance où le laser.
+    ax2.plot(times[::step], temp_therm_1[::step], linestyle='-', color='r', label='Thermistance 1')
+    ax2.plot(times[::step], temp_therm_2[::step], linestyle='--', color='y', label='Thermistance 2')
+    ax2.plot(times[::step], temp_therm_laser[::step], linestyle='-.', color='k', label='Thermistance laser')
     ax2.set_xlabel("Temps (s)")
     ax2.set_ylabel("Température (K)")
     ax2.set_title("Évolution des températures dans la plaque")
@@ -395,8 +378,8 @@ def animate_2D():               #Animation 2D de la chaleur
     fig3, ax3 = plt.subplots()
     ax3.plot(times, Energie_list, linestyle='-', color='b')
     ax3.set_xlabel("Temps (s)")
-    ax3.set_ylabel("Energie interne plaque(J)")
-    ax3.set_title("Évolution de l'energie interne")
+    ax3.set_ylabel("Énergie interne plaque (J)")
+    ax3.set_title("Évolution de l'énergie interne")
     plt.show()
 
     save_results()
@@ -426,18 +409,22 @@ def animate_2D():               #Animation 2D de la chaleur
 
 
 def animate_3D():
+    global temp_therm_1, temp_therm_2, temp_therm_laser, Energie_list, frame_count, current_time, surf
     reset_temperature()  # Réinitialisation de la température
-    
+    temp_therm_1, temp_therm_2, temp_therm_laser, Energie_list = [], [], [], []
+    frame_count = 0  # Réinitialisation du compteur de frames
+    current_time = 0
+
+
     x = np.linspace(0, Lx, n_x)             #nombre de cases en x
     y = np.linspace(0, Ly, n_y)             #nombre de cases en y
-    X, Y = np.meshgrid(y, x)                # on cree la grille 2D
+    X, Y = np.meshgrid(x, y, indexing='ij')        # on cree la grille 2D
 
     fig = plt.figure(figsize=(10, 8))       #on cree la figure plt
     ax = fig.add_subplot(111, projection='3d')      #on met les cadrans
 
-    # Définir surf comme variable globale
-    global surf     
-    surf = ax.plot_surface(X, Y, T, cmap='inferno', vmin=T_min, vmax=T_max)
+       
+    surf = ax.plot_surface(X, Y, T, cmap='inferno', vmin=np.min(T), vmax=np.max(T))
 
  
     # Colorbar associée à la surface
@@ -450,53 +437,48 @@ def animate_3D():
         ax.set_ylabel('y (m)')
         ax.set_zlabel('Température (K)')
         ax.set_title('Évolution de la température (3D)')
-        return [surf]
+        return []
 
-
+    
     def update(frame):
-        global T, surf, current_time
+        global T, current_time, frame_count, surf
 
-        iterations_per_second = int(1 / dt) 
+        if current_time >= temps_simulation:
+            print(f"Simulation arrêtée à {current_time:.2f} s après {frame_count} frames.")
+            anim.event_source.stop()
+            return []
+        
+        frame_count += 1
 
-        for _ in range(iterations_per_second):
+        for _ in range(1000):
             T = vector_evolution_temperature(
                 T,
                 pos_ac=pos_ac, nx_ac=nx_ac, ny_ac=ny_ac, P_ac=P_ac,
                 pos_pert=pos_pert, nx_pert=nx_pert, ny_pert=ny_pert, P_pert=P_pert
             )
 
-        surf.remove()  # Supprime l'ancienne surface
-
-        # Recréer la surface avec de nouvelles couleurs
-        norm = plt.Normalize(vmin=np.min(T), vmax=np.max(T))
-        colors = cm.inferno(norm(T)) 
-        surf = ax.plot_surface(X, Y, T, facecolors=colors, rstride=1, cstride=1)
-
-        current_time += 1
-        ax.set_title(f"Temps simulé : {current_time:.2f} s")
         
 
 
-     # Suivre la température en un point sur la plaque dans la simulation 2D
-        thermistance_1 = T[30, 15]
-        thermistance_2 = T[30, 60]
-        thermistance_laser = T[30, 105]
-        temp_therm_1.append(thermistance_1)  # on rajoute dans la liste
-        temp_therm_2.append(thermistance_2)
-        temp_therm_laser.append(thermistance_laser)
-        # Energie thermique interne totale plaque : E(t) = p*vol*cp * somme(T(i,j))
-        E_current = p * cp * np.sum(T) * vol
-        Energie_list.append(E_current)
+            #Suivre la température en un point sur la plaque dans la simulation 2D
+            thermistance_1 = T[n_x//4, n_y//2]
+            thermistance_2 = T[n_x//2, n_y//2]  # On recolte Recolte temperature a cette position 
+            thermistance_laser = T[min(80, n_x - 1), n_y // 2]
+            temp_therm_1.append(thermistance_1)  # on rajoute dans la liste
+            temp_therm_2.append(thermistance_2)
+            temp_therm_laser.append(thermistance_laser)
+            
+            # Energie thermique interne totale plaque : E(t) = p*vol*cp * somme(T(i,j))
+            E_current = p * cp * np.sum(T) * vol
+            Energie_list.append(E_current)
 
-      #  # Suppression de la surface précédente
-      #  surf.remove()  
+            current_time += dt
 
-        # Création de la nouvelle surface
-       # surf = ax.plot_surface(X, Y, T, cmap='inferno', vmin=T_min, vmax=T_max)
 
-        # Mise à jour du titre
-       # ax.set_title(f"Temps simulé : {frame * dt * 100:.2f} s")
-
+        ax.collections.clear()  # Supprime la surface précédente
+        surf = ax.plot_surface(X, Y, T, cmap='inferno', vmin=np.min(T), vmax=np.max(T))
+        #ax.set_title(f"Évolution température 3D - {frame * dt * 100:.2f} s")
+        ax.set_title(f"Évolution température 3D - {current_time:.2f} s")
         return [surf]
     
 
@@ -505,29 +487,23 @@ def animate_3D():
     anim = FuncAnimation(              #meme chose que pour Animation 3D
             fig,
             func=update,
-            frames=int(temps_simulation),  
+            frames=n_frames // 100,  
             init_func=init,
-            interval=1000,
+            interval=50,
             blit=False
         )
     plt.show()
 
 
-    if len(temp_therm_1) == 0 or len(Energie_list) == 0:
-        print("Erreur : Les listes de températures et d'énergie sont vides.")
-        return  # Sortie anticipée pour éviter un affichage vide
-
+    times = np.arange(len(temp_therm_1))*dt  # approx le temps (chq frame => dt)
+    
 
     step = max(1, len(temp_therm_1) // 100)
-    times = np.arange(len(temp_therm_1)) * dt  # approx le temps (chq frame => dt)
-     
-    
-    fig2, ax2 = plt.subplots()
 
-    # Tracés des températures des trois thermistances
-    ax2.plot(times, temp_therm_1, linestyle='-', color='r', label='Thermistance 1 (y=80)')   #affiche la température de la thermistance où l'actuateur
-    ax2.plot(times, temp_therm_2, linestyle='--', color='y', label='Thermistance 2 (centre)')  #affiche la température de la 2e thermistance.
-    ax2.plot(times, temp_therm_laser, linestyle='-.', color='k', label='Thermistance laser (y=n_y/4)')   #affiche la température de la thermistance où le laser.
+    fig2, ax2 = plt.subplots()
+    ax2.plot(times[::step], temp_therm_1[::step], linestyle='-', color='r', label='Thermistance 1 (y=80)')
+    ax2.plot(times[::step], temp_therm_2[::step], linestyle='--', color='y', label='Thermistance 2 (centre)')
+    ax2.plot(times[::step], temp_therm_laser[::step], linestyle='-.', color='k', label='Thermistance laser (y=n_y/4)')
     ax2.set_xlabel("Temps (s)")
     ax2.set_ylabel("Température (K)")
     ax2.set_title("Évolution des températures dans la plaque")
@@ -539,12 +515,13 @@ def animate_3D():
     #figure pour voir l'evolution de l'energie interne de la plaque
 
     fig3, ax3 = plt.subplots()
-    ax3.plot(times, Energie_list)
+    ax3.plot(times, Energie_list, linestyle='-', color='b')
     ax3.set_xlabel("Temps (s)")
-    ax3.set_ylabel("Energie interne plaque(J)")
-    ax3.set_title("Évolution de l'energie interne")
+    ax3.set_ylabel("Énergie interne de la plaque (J)")
+    ax3.set_title("Évolution de l'énergie interne")
     plt.show()
-    save_results()                      #on enregistre les résultats de la simulation dans un fichier json
+
+    save_results()                 #on enregistre les résultats de la simulation dans un fichier json
 
 
 
@@ -570,23 +547,6 @@ def save_results(filename="resultats_simulation.json"):
 
 
 
-# Interface (Terminale) utilisateur
-#while True:
-#    choix = input("Choisir le type d'animation (2D/3D) ou 'q' pour quitter: ").upper()
-#    if choix == 'Q':
-#        break
-#    elif choix == '3D':
-#        # Réinitialisation des données avant chaque simulation
-#        temp_therm_1, temp_therm_2, temp_therm_laser, Energie_list = [], [], [], []
-#        animate_3D()
-#    elif choix == '2D':
-#        # Réinitialisation des données avant chaque simulation
-#        temp_therm_1, temp_therm_2, temp_therm_laser, Energie_list = [], [], [], []
-#        animate_2D()
-#    else:
-#        print("Choix invalide. Veuillez entrer '2D', '3D' ou 'q'.")
-
-
 
 
 # Création de la fenêtre principale
@@ -602,18 +562,21 @@ puissance_actuateur = tk.DoubleVar(value=P_ac)  # Récupère la valeur définie 
 puissance_perturbation = tk.DoubleVar(value=P_pert)  # Idem
 
 # Fonction pour lancer la simulation
+# Fonction pour lancer la simulation
 def lancer_simulation():
     global P_ac, P_pert
     P_ac = puissance_actuateur.get()
     P_pert = puissance_perturbation.get()
     
     # Réinitialisation des données
+    global temp_therm_1, temp_therm_2, temp_therm_laser, Energie_list
     temp_therm_1, temp_therm_2, temp_therm_laser, Energie_list = [], [], [], []
 
     if choix_animation.get() == "2D":
-        animate_2D()  # Appelle ta fonction d'animation 2D
+        animate_2D()  # Appelle votre fonction d'animation 2D
     else:
-        animate_3D()  # Appelle ta fonction d'animation 3D
+        animate_3D()  # Appelle votre fonction d'animation 3D
+
 
 # Widgets de l'interface
 ttk.Label(root, text="Choix de l'animation :").pack(pady=5)
@@ -628,9 +591,39 @@ ttk.Label(root, text="Puissance Perturbation (W)").pack(pady=5)
 slider_perturbation = ttk.Scale(root, from_=0, to=10, variable=puissance_perturbation, orient="horizontal")
 slider_perturbation.pack(pady=5)
 
+therm1_label = ttk.Label(root, text="Thermistance 1: ---")
+therm1_label.pack(pady=5)
+therm2_label = ttk.Label(root, text="Thermistance 2: ---")
+therm2_label.pack(pady=5)
+
+
 btn_lancer = ttk.Button(root, text="Démarrer la simulation", command=lancer_simulation)
 btn_lancer.pack(pady=20)
 
+
+
 # Lancer la boucle principale Tkinter
 root.mainloop()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
