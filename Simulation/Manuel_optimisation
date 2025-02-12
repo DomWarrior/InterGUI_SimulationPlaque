@@ -44,7 +44,6 @@ print(Nt)
 pos_ac = tuple(params["simulation"]["pos_ac"])
 nx_ac = params["simulation"]["nx_ac"]
 ny_ac = params["simulation"]["ny_ac"]
-h = params["convection"]["h"]
 
 # Fonction d'évolution de la température (DOIT RESTER IDENTIQUE)
 def vector_evolution_temperature(T, h, pos_ac, nx_ac, ny_ac, P_ac=None,

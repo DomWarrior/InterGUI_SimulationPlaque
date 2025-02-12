@@ -121,11 +121,11 @@ def vector_evolution_temperature(T, h, pos_ac, nx_ac, ny_ac, P_ac=None,
 
 
 
-T_ref = round(Actu[1], 4)
+T_ref = round(T2[1], 4)
 T_air = T_ref
 T_ref = np.ones((n_x, n_y))*(T_ref)
 
-temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[1:], T2[1:], Laser[1:] 
+temp_therm_2_ref =  T2[1:]
 
 
 
@@ -133,30 +133,30 @@ temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[1:], T2[1:], Las
 
 
 
-h_values = np.arange(15,20,1)
-P_values = np.arange(-3.0, -2.0, 0.1)
+h_values = np.arange(15,20,5)
+P_values = np.arange(-3.0, -2.6, 0.1)
 errors = []
 
 
 
 
 
-for h in h_values:
-    for P in P_values:
+for P in P_values:
+    for h in h_values:
         T_test = T_ref
-        temp_therm_1_test, temp_therm_2_test, temp_therm_laser_test = [], [], []
+        temp_therm_2_test= []
         print(f'Début simulation pour ({h}:{P})')
 
         for _ in range(Nt):
             T_test = vector_evolution_temperature(T_test, h, pos_ac, nx_ac, ny_ac, P)
-            temp_therm_1_test.append(T_test[30, 15])
+            temp_therm_2_test.append(T_test[30, 60])
 
         
        
-        temp_therm_1_test = temp_therm_1_test[::3]
-        print(len(temp_therm_1_test), len(Actu[1:]))
+        temp_therm_2_test = temp_therm_2_test[::3]
+        print(len(temp_therm_2_test), len(T2[1:]))
 
-        error = np.sum((np.array(temp_therm_1_test) - np.array(Actu[1:]))**2)
+        error = np.sum((np.array(temp_therm_2_test) - np.array(T2[1:]))**2)
 
         errors.append(error)
         print(f'Fin simulation pour ({h}:{P})')
@@ -168,8 +168,8 @@ for h in h_values:
         plt.figure(figsize=(10, 5))
 
 # Thermistance 1
-        plt.plot(times, temp_therm_1_ref, linestyle='-', color='r', label='Réf Thermistance 1')
-        plt.plot(times, temp_therm_1_test, linestyle='--', color='r', 
+        plt.plot(times, temp_therm_2_ref, linestyle='-', color='r', label='Réf Thermistance 2')
+        plt.plot(times, temp_therm_2_test, linestyle='--', color='r', 
             label=f'Test Thermistance 1')
 
 
@@ -192,11 +192,11 @@ temp_therm_1_best, temp_therm_2_best, temp_therm_laser_best = [], [], []
 
 for _ in range(Nt):
     T_best = vector_evolution_temperature(T_best, Hp_optimal[0], pos_ac, nx_ac, ny_ac, Hp_optimal[1])
-    temp_therm_1_best.append(T_best[30, 15])
+    temp_therm_2_best.append(T_best[30, 15])
     
     
 
-temp_therm_1_best = temp_therm_1_best[::3]
+temp_therm_2_best = temp_therm_2_best[::3]
 
 times = np.array(temps[1:])  
 
@@ -205,13 +205,13 @@ times = np.array(temps[1:])
 
 times = np.array(temps[1:])  
 
-print(len(times), len(temp_therm_1_best), len(temp_therm_1_ref))
+print(len(times), len(temp_therm_2_best), len(temp_therm_2_ref))
 
 plt.figure(figsize=(10, 5))
 
 # Thermistance 1
-plt.plot(times, temp_therm_1_ref, linestyle='-', color='r', label='Réf Thermistance 1')
-plt.plot(times, temp_therm_1_best, linestyle='--', color='r', 
+plt.plot(times, temp_therm_2_ref, linestyle='-', color='r', label='Réf Thermistance 1')
+plt.plot(times, temp_therm_2_best, linestyle='--', color='r', 
          label=f'Test Thermistance 1 (h={Hp_optimal[0]:.2f}, P={Hp_optimal[1]:.2f})')
 
 
