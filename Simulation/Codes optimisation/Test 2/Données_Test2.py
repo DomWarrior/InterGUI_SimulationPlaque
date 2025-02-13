@@ -2,7 +2,7 @@ import csv
 import numpy as np
 
 
-with open('Simulation\BONtest2.csv','r') as csv_files:
+with open('Simulation\Données Brutes\BONtest2.csv','r') as csv_files:
     reader = csv.reader(csv_files, delimiter=';')
 
     temps = []
