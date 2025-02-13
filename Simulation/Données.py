@@ -21,3 +21,5 @@ with open('Simulation\kest1C.csv','r') as csv_files:
         except: 
             pass
     csv_files.close()
+
+print(len(Actu))
