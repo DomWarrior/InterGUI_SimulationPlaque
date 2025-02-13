@@ -134,15 +134,15 @@ temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[12226:], T2[1222
 
 
 h_values = np.arange(11.31,11.4,0.1)
-P_values = np.arange(2.45, 2.55, 0.01)
+P_values = np.arange(2.5, 2.55, 0.1)
 errors = []
 
 
 
 
 
-for h in h_values:
-    for P in P_values:
+for P in P_values:
+    for h in h_values:
         T_test = T_ref
         temp_therm_1_test, temp_therm_2_test, temp_therm_laser_test = [], [], []
         print(f'Début simulation pour ({h}:{P})')
