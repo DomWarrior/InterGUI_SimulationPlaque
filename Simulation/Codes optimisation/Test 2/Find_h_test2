@@ -133,7 +133,7 @@ temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[12226:], T2[1222
 
 
 
-h_values = np.arange(11.31,11.4,0.1)
+h_values = np.arange(11.31,11.4,0.01)
 P_values = np.arange(2.5, 2.55, 0.1)
 errors = []
 
