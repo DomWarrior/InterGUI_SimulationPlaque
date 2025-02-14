@@ -83,13 +83,13 @@ def vector_evolution_temperature(T, h, pos_ac, nx_ac, ny_ac, P_ac=None,
     if P_ac is not None:
         i, j = pos_ac
         P_par_element = P_ac/(nx_ac*ny_ac)
-        T_new[i-nx_ac//2:i+nx_ac//2, j-ny_ac//2:j+ny_ac//2] += (P_par_element*dt)/(p*cp*vol)
+        T_new[i-nx_ac//2:i+nx_ac//2+1, j-ny_ac//2:j+ny_ac//2+1] += (P_par_element*dt)/(p*cp*vol)
 
     # Perturbation
     if P_pert is not None:
         k, l = pos_pert
         P_par_element = P_pert/(nx_pert*ny_pert)
-        T_new[k-nx_pert//2:k+nx_pert//2, l-ny_pert//2:l+ny_pert//2] += (P_par_element*dt)/(p*cp*vol)
+        T_new[k-nx_pert//2:k+nx_pert//2+1, l-ny_pert//2:l+ny_pert//2+1] += (P_par_element*dt)/(p*cp*vol)
 
     return T_new
 
@@ -130,8 +130,8 @@ temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[12226:], T2[1222
 
 
 
-h_values = 11.35
-P_values = 2.50
+h_values = 12.3
+P_values = 2.40
 errors = []
 
 
@@ -153,8 +153,7 @@ temp_therm_2_test = temp_therm_2_test[::3]
 temp_therm_laser_test = temp_therm_laser_test[::3]
 
 error = np.sum((np.array(temp_therm_1_test) - np.array(temp_therm_1_ref))**2) + \
-            np.sum((np.array(temp_therm_2_test) - np.array(temp_therm_2_ref))**2) + \
-            np.sum((np.array(temp_therm_laser_test) - np.array(temp_therm_laser_ref))**2)
+            np.sum((np.array(temp_therm_2_test) - np.array(temp_therm_2_ref))**2)
 print(error)        
        
 

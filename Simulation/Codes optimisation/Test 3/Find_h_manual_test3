@@ -128,7 +128,7 @@ temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[1:], T2[1:], Las
 
 
 
-
+A = 0.83
 
 h_values = 11.45
 P_values = 1.4

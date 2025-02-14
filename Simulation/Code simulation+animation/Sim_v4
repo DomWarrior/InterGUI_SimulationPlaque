@@ -82,8 +82,8 @@ vol = dx*dy*e
 a = k/(cp*p)
 dt = 0.001
 Nt = int(temps_simulation/dt)
-T_min = 10
-T_max = 315 -273.15
+T_min = 20
+T_max = 30
 
 #Affichage utile
 print(dx, dy)                                       # plus dx ou dy est petit, meilleur est la resolution spatiale , mais plus que c'est long et gourmant simuler 
@@ -283,8 +283,8 @@ def animate_2D():               #Animation 2D de la chaleur
         interpolation='nearest',    #façon dont les couleurs sont inerpolées entre les pixels : 'nearest' : Aucun issage
         origin='lower',             #defini l'origine de la grille (0,0): lower = en bas a gauche
         animated=True,              #pour optimiser les animations avec FuncAnimation
-        vmin=T_min-273.15,
-        vmax=T_max-273.15
+        vmin=20,
+        vmax=30
     )
     
 

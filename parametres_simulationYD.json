@@ -1,21 +1,21 @@
 {
     "proprietes_thermiques": {
-      "k": 205,
+      "k": 167,
       "p": 2700,
       "cp": 900
     },
     "dimensions_plaque": {
-      "Lx": 0.06,
-      "Ly": 0.12,
-      "e": 0.0015
+      "Lx": 0.061,
+      "Ly": 0.117,
+      "e": 0.00165
     },
     "convection": {
       "T_air": 297.47,
       "h": 5
     },
     "discretisation": {
-      "n_x": 60,
-      "n_y": 120
+      "n_x": 61,
+      "n_y": 117
     },
     "simulation": {
       "temps_simulation": 100,
