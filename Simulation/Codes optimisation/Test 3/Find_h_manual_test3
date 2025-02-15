@@ -83,7 +83,7 @@ def vector_evolution_temperature(T, h, pos_ac, nx_ac, ny_ac, P_ac=None,
     if P_ac is not None:
         i, j = pos_ac
         P_par_element = P_ac/(nx_ac*ny_ac)
-        T_new[i-nx_ac//2:i+nx_ac//2, j-ny_ac//2:j+ny_ac//2] += (P_par_element*dt)/(p*cp*vol)
+        T_new[i-nx_ac//2:i+nx_ac//2+1, j-ny_ac//2:j+ny_ac//2+1] += (P_par_element*dt)/(p*cp*vol)
 
     # Perturbation
     if P_pert is not None:

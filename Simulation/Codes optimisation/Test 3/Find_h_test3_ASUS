@@ -32,7 +32,7 @@ dz = e
 vol = dx * dy * e
 
 # Simulation
-temps_simulation = len(temps[1:50000])*0.003
+temps_simulation = len(temps[1:])*0.003
 a = k / (cp * p)
 dt = 0.001
 Nt = int(temps_simulation / dt)
@@ -86,7 +86,7 @@ def vector_evolution_temperature(T, h, pos_ac, nx_ac, ny_ac, P_ac=None,
     if P_ac is not None:
         i, j = pos_ac
         P_par_element = P_ac/(nx_ac*ny_ac)
-        T_new[i-nx_ac//2:i+nx_ac//2, j-ny_ac//2:j+ny_ac//2] += (P_par_element*dt)/(p*cp*vol)
+        T_new[i-nx_ac//2:i+nx_ac//2+1, j-ny_ac//2:j+ny_ac//2+1] += (P_par_element*dt)/(p*cp*vol)
 
     # Perturbation
     if P_pert is not None:
@@ -121,11 +121,11 @@ def vector_evolution_temperature(T, h, pos_ac, nx_ac, ny_ac, P_ac=None,
 
 
 
-T_ref = round(np.mean([Actu[1], T2[1]]), 4)
+T_ref = round(np.mean([Actu[1]]), 4)
 T_air = T_ref
 T_ref = np.ones((n_x, n_y))*(T_ref)
 
-temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[1:50000], T2[1:50000], Laser[1:50000] 
+temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[1:], T2[1:], Laser[1:] 
 
 
 
@@ -133,8 +133,8 @@ temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[1:50000], T2[1:5
 
 
 
-h_values = np.arange(5,25,1)
-P_values = np.arange(0.5, 2, 0.1)
+h_values = np.arange(11.00,12.00,0.1)
+P_values = np.arange(1.0, 1.6, 0.1)
 errors = []
 
 
@@ -156,13 +156,9 @@ for P in P_values:
         temp_therm_1_test = temp_therm_1_test[::3]
         temp_therm_2_test = temp_therm_2_test[::3]
         temp_therm_laser_test = temp_therm_laser_test[::3]
-        print(len(temp_therm_1_test), len(Actu[1:]))
 
-        error = np.sum((np.array(temp_therm_1_test) - np.array(temp_therm_1_ref))**2) + \
-            np.sum((np.array(temp_therm_2_test) - np.array(temp_therm_2_ref))**2)
-        erreur.append(error)
-        if error > 10000:
-            break
+        error = np.sum((np.array(temp_therm_1_test) - np.array(temp_therm_1_ref))**2) 
+          #  np.sum((np.array(temp_therm_2_test) - np.array(temp_therm_2_ref))**2)
         errors.append(error)
         print(errors)
         print(f'Fin simulation pour ({h}:{P})')

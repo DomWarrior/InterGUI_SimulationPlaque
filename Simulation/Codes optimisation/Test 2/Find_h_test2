@@ -121,7 +121,8 @@ def vector_evolution_temperature(T, h, pos_ac, nx_ac, ny_ac, P_ac=None,
 
 
 
-T_ref = round(np.mean([Actu[12226], T2[12226], Laser[12226]]), 4)
+T_ref = round(np.mean([Actu[12226]]), 4)
+T_ref = 23.65
 T_air = T_ref
 T_ref = np.ones((n_x, n_y))*(T_ref)
 
@@ -133,9 +134,13 @@ temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[12226:], T2[1222
 
 
 
-h_values = np.arange(11.00,13.15,0.15)
-P_values = np.arange(2.3, 2.5, 0.1)
+h_values = np.arange(11.6,12.2,0.1)
+P_values = np.arange(2.25, 2.35, 0.025)
 errors = []
+
+
+
+
 
 
 
@@ -160,8 +165,8 @@ for P in P_values:
         temp_therm_laser_test = temp_therm_laser_test[::3]
         print(len(temp_therm_1_test), len(Actu[1:]))
 
-        error = np.sum((np.array(temp_therm_1_test) - np.array(temp_therm_1_ref))**2) + \
-            np.sum((np.array(temp_therm_2_test) - np.array(temp_therm_2_ref))**2)
+        error = np.sum((np.array(temp_therm_1_test) - np.array(temp_therm_1_ref))**2) #+ \
+           #np.sum((np.array(temp_therm_2_test) - np.array(temp_therm_2_ref))**2)
 
         errors.append(error)
         print(errors)
