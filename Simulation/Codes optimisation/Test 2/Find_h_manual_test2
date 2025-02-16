@@ -130,8 +130,8 @@ temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[12226:], T2[1222
 
 
 
-h_values = 11.6
-P_values = 2.3
+h_values = 11.9
+P_values = 2.35
 errors = []
 
 
@@ -163,33 +163,22 @@ print(error)
 
 
 
-times = np.array(temps[12226:])  # Utiliser les temps expérimentaux
+times = np.array(temps[12226:])  - temps[12226]# Utiliser les temps expérimentaux
+
 
 
 
 plt.figure(figsize=(10, 5))
 
 # Thermistance 1
-plt.plot(times, temp_therm_1_ref, linestyle='-', color='r', label='Réf Thermistance 1')
-plt.plot(times, temp_therm_1_test, linestyle='--', color='r', 
-         label=f'Test Thermistance 1 ')
-
-
-# Thermistance 2
-plt.plot(times, temp_therm_2_ref, linestyle='-', color='y', label='Réf Thermistance 2')
-plt.plot(times, temp_therm_2_test, linestyle='--', color='r', 
-         label=f'Test Thermistance 2 ')
-
-
-# Thermistance 3
-plt.plot(times, temp_therm_laser_ref, linestyle='-', color='k', label='Réf Thermistance Laser')
+plt.plot(times, temp_therm_laser_ref, linestyle='-', color='b', label='Thermistance où le laser du prototype')
 plt.plot(times, temp_therm_laser_test, linestyle='--', color='r', 
-         label=f'Test Thermistance laser')
-
+         label=f'Thermistance où le laser du simulateur ')
 
 plt.xlabel("Temps (s)")
 plt.ylabel("Température (°C)")
-plt.title("Comparaison des températures des thermistances")
+#plt.title(r"Comparaison des températures des thermistances : $h = {}\,\mathrm{{W/m^2K}},\ P = {}\,\mathrm{{W}}$".format(h_values, P_values))
+
 plt.legend()
 plt.grid(True)
 plt.show()

@@ -118,7 +118,7 @@ def vector_evolution_temperature(T, h, pos_ac, nx_ac, ny_ac, P_ac=None,
 
 
 
-T_ref = round(np.mean([Actu[1], T2[1]]), 4)
+T_ref = round(np.mean([Laser[1]]), 4)
 T_air = T_ref
 T_ref = np.ones((n_x, n_y))*(T_ref)
 
@@ -130,8 +130,8 @@ temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[1:], T2[1:], Las
 
 A = 0.83
 
-h_values = 11.45
-P_values = 1.4
+h_values = 12.0
+P_values = 1.37
 errors = []
 
 
@@ -152,8 +152,8 @@ temp_therm_1_test = temp_therm_1_test[::3]
 temp_therm_2_test = temp_therm_2_test[::3]
 temp_therm_laser_test = temp_therm_laser_test[::3]
 
-error = np.sum((np.array(temp_therm_1_test) - np.array(temp_therm_1_ref))**2) + \
-            np.sum((np.array(temp_therm_2_test) - np.array(temp_therm_2_ref))**2) 
+error = np.sum((np.array(temp_therm_laser_test) - np.array(temp_therm_laser_ref))**2) #+ \
+            #np.sum((np.array(temp_therm_2_test) - np.array(temp_therm_2_ref))**2) 
 print(error)        
        
 
@@ -170,26 +170,14 @@ times = np.array(temps[1:])  # Utiliser les temps expérimentaux
 plt.figure(figsize=(10, 5))
 
 # Thermistance 1
-plt.plot(times, temp_therm_1_ref, linestyle='-', color='r', label='Réf Thermistance 1')
-plt.plot(times, temp_therm_1_test, linestyle='--', color='r', 
-         label=f'Test Thermistance 1 ')
-
-
-# Thermistance 2
-plt.plot(times, temp_therm_2_ref, linestyle='-', color='y', label='Réf Thermistance 2')
-plt.plot(times, temp_therm_2_test, linestyle='--', color='r', 
-         label=f'Test Thermistance 2 ')
-
-
-# Thermistance 3
-plt.plot(times, temp_therm_laser_ref, linestyle='-', color='k', label='Réf Thermistance Laser')
+plt.plot(times, temp_therm_laser_ref, linestyle='-', color='b', label='Thermistance où le laser du  prototype')
 plt.plot(times, temp_therm_laser_test, linestyle='--', color='r', 
-         label=f'Test Thermistance laser')
-
+         label=f'Thermistance où le laser du  simulateur ')
 
 plt.xlabel("Temps (s)")
 plt.ylabel("Température (°C)")
-plt.title("Comparaison des températures des thermistances")
+#plt.title(r"Comparaison des températures des thermistances : $h = {}\,\mathrm{{W/m^2K}},\ P = {}\,\mathrm{{W}}$".format(h_values, P_values))
+
 plt.legend()
 plt.grid(True)
 plt.show()
