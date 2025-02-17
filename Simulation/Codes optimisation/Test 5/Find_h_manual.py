@@ -32,7 +32,7 @@ dz = e
 vol = dx * dy * e
 
 # Simulation
-temps_simulation = len(temps[47:])*0.5
+temps_simulation = len(temps[273:])*0.15
 a = k / (cp * p)
 dt = 0.001
 Nt = int(temps_simulation / dt)
@@ -118,11 +118,11 @@ def vector_evolution_temperature(T, h, pos_ac, nx_ac, ny_ac, P_ac=None,
 
 
 
-T_ref = 22.56
+T_ref = Laser[273]
 T_air = T_ref
 T_ref = np.ones((n_x, n_y))*(T_ref)
 
-temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[47:], T2[47:], Laser[47:] 
+temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[273:], T2[273:], Laser[273:] 
 
 
 
@@ -131,7 +131,7 @@ temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[47:], T2[47:], L
 A = 0.83
 
 h_values = 12
-P_values = 5
+P_values = 1.6
 errors = []
 
 
@@ -148,9 +148,9 @@ for _ in range(Nt):
     temp_therm_2_test.append(T_test[30, 60])
     temp_therm_laser_test.append(T_test[30, 105])
     
-temp_therm_1_test = temp_therm_1_test[::500]
-temp_therm_2_test = temp_therm_2_test[::500]
-temp_therm_laser_test = temp_therm_laser_test[::500]
+temp_therm_1_test = temp_therm_1_test[::150]
+temp_therm_2_test = temp_therm_2_test[::150]
+temp_therm_laser_test = temp_therm_laser_test[::150]
 
 error = np.sum((np.array(temp_therm_laser_test) - np.array(temp_therm_laser_ref))**2) #+ \
             #np.sum((np.array(temp_therm_2_test) - np.array(temp_therm_2_ref))**2) 
@@ -163,7 +163,7 @@ print(error)
 
 
 
-times = np.array(temps[47:])  - temps[47]# Utiliser les temps expérimentaux
+times = np.array(temps[273:])# Utiliser les temps expérimentaux
 
 
 

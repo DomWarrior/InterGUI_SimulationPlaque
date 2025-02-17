@@ -157,11 +157,14 @@ error = np.sum((np.array(temp_therm_laser_test) - np.array(temp_therm_laser_ref)
 print(error)        
        
 
-
+a = temp_therm_1_test[-1]
+b =  temp_therm_1_ref[-1]
     
 # Définition correcte de l'axe des temps basé sur les mesures expérimentales
 
+print(a, b)
 
+print ( (np.abs(a-b)/b)*100 )
 
 times = np.array(temps[1:])  # Utiliser les temps expérimentaux
 
@@ -170,9 +173,20 @@ times = np.array(temps[1:])  # Utiliser les temps expérimentaux
 plt.figure(figsize=(10, 5))
 
 # Thermistance 1
+plt.plot(times, temp_therm_1_ref, linestyle='-', color='b', label='Thermistance où le laser du  prototype')
+plt.plot(times, temp_therm_1_test, linestyle='--', color='r', 
+         label=f'Thermistance où le laser du  simulateur ')
+
+# Thermistance 1
+plt.plot(times, temp_therm_2_ref, linestyle='-', color='b', label='Thermistance où le laser du  prototype')
+plt.plot(times, temp_therm_2_test, linestyle='--', color='r', 
+         label=f'Thermistance où le laser du  simulateur ')
+
+# Thermistance 1
 plt.plot(times, temp_therm_laser_ref, linestyle='-', color='b', label='Thermistance où le laser du  prototype')
 plt.plot(times, temp_therm_laser_test, linestyle='--', color='r', 
          label=f'Thermistance où le laser du  simulateur ')
+
 
 plt.xlabel("Temps (s)")
 plt.ylabel("Température (°C)")

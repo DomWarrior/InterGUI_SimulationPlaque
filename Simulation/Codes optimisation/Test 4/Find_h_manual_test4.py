@@ -159,7 +159,14 @@ print(error)
        
 
 
+a = temp_therm_1_test[-1]
+b =  temp_therm_1_ref[-1]
     
+# Définition correcte de l'axe des temps basé sur les mesures expérimentales
+
+print(a, b)
+
+print ( (np.abs(a-b)/b)*100 )
 # Définition correcte de l'axe des temps basé sur les mesures expérimentales
 
 
