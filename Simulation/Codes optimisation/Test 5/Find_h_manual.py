@@ -128,10 +128,10 @@ temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[273:], T2[273:],
 
 
 
-A = 0.83
+A = 1
 
-h_values = 12
-P_values = 1.6
+h_values = 12.5
+P_values = 1.60
 errors = []
 
 
@@ -165,18 +165,45 @@ print(error)
 
 times = np.array(temps[273:])# Utiliser les temps expérimentaux
 
+therm1_ref = np.array(temp_therm_1_ref[100:])
+therm2_ref = np.array(temp_therm_2_ref[100:])
+laser_ref  = np.array(temp_therm_laser_ref[100:])
+
+therm1_sim = np.array(temp_therm_1_test[100:])
+therm2_sim = np.array(temp_therm_2_test[100:])
+laser_sim  = np.array(temp_therm_laser_test[100:])
+
+# On calcule l'écart en pourcentage à chaque point dans le temps :
+# Attention à vérifier que thermX_ref ne contient pas de zéros pour éviter la division par zéro.
+err_therm1_percent = 100 * np.abs(therm1_sim - therm1_ref) / np.abs(therm1_ref)
+err_therm2_percent = 100 * np.abs(therm2_sim - therm2_ref) / np.abs(therm2_ref)
+err_laser_percent  = 100 * np.abs(laser_sim - laser_ref)   / np.abs(laser_ref)
+
+# On récupère l'écart maximal pour chaque thermistance
+max_err_therm1 = np.max(err_therm1_percent)
+max_err_therm2 = np.max(err_therm2_percent)
+max_err_laser  = np.max(err_laser_percent)
+
+print(f"Écart max Thermistance 1 (en %) : {max_err_therm1:.2f}")
+print(f"Écart max Thermistance 2 (en %) : {max_err_therm2:.2f}")
+print(f"Écart max Laser         (en %) : {max_err_laser:.2f}")
+
+# Si on veut aussi l'écart maximal parmi TOUTES les thermistances :
+all_errors_percent = np.concatenate([err_therm1_percent, err_therm2_percent, err_laser_percent])
+max_err_all = np.max(all_errors_percent)
+print(f"Écart max global (en %) : {max_err_all:.2f}")
 
 
 plt.figure(figsize=(10, 5))
 
 # Thermistance 1
-plt.plot(times, temp_therm_laser_ref, linestyle='-', color='b', label='Thermistance où le laser du  prototype')
+plt.plot(times, temp_therm_laser_ref, linestyle='-', color='b', label='Thermistance de l\'actuateur du  prototype')
 plt.plot(times, temp_therm_laser_test, linestyle='--', color='r', 
-         label=f'Thermistance où le laser du  simulateur ')
+         label=f'Thermistance de l\'actuateur du simulateur')
 
-plt.plot(times, temp_therm_1_ref, linestyle='-', color='b', label='Thermistance où le laser du  prototype')
+plt.plot(times, temp_therm_1_ref, linestyle='-', color='b', label='Thermistance 2 du  prototype')
 plt.plot(times, temp_therm_1_test, linestyle='--', color='r', 
-         label=f'Thermistance où le laser du  simulateur ')
+         label=f'Thermistance 2 du  simulateur ')
 
 plt.plot(times, temp_therm_2_ref, linestyle='-', color='b', label='Thermistance où le laser du  prototype')
 plt.plot(times, temp_therm_2_test, linestyle='--', color='r', 

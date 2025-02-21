@@ -118,20 +118,19 @@ def vector_evolution_temperature(T, h, pos_ac, nx_ac, ny_ac, P_ac=None,
 
 
 
-T_ref = round(np.mean([Laser[1]]), 4)
+T_ref = 23.45
 T_air = T_ref
 T_ref = np.ones((n_x, n_y))*(T_ref)
 
 temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[1:], T2[1:], Laser[1:] 
-
-
+temp_therm_laser_ref = [val + 0.3 for val in temp_therm_laser_ref]
 
 
 
 A = 0.83
 
-h_values = 12.0
-P_values = 1.37
+h_values = 12.5
+P_values = 1.32
 errors = []
 
 
@@ -154,20 +153,37 @@ temp_therm_laser_test = temp_therm_laser_test[::3]
 
 error = np.sum((np.array(temp_therm_laser_test) - np.array(temp_therm_laser_ref))**2) #+ \
             #np.sum((np.array(temp_therm_2_test) - np.array(temp_therm_2_ref))**2) 
-print(error)        
-       
 
-a = temp_therm_1_test[-1]
-b =  temp_therm_1_ref[-1]
-    
-# Définition correcte de l'axe des temps basé sur les mesures expérimentales
-
-print(a, b)
-
-print ( (np.abs(a-b)/b)*100 )
 
 times = np.array(temps[1:])  # Utiliser les temps expérimentaux
 
+therm1_ref = np.array(temp_therm_1_ref[10000:])
+therm2_ref = np.array(temp_therm_2_ref[10000:])
+laser_ref  = np.array(temp_therm_laser_ref[10000:])
+
+therm1_sim = np.array(temp_therm_1_test[10000:])
+therm2_sim = np.array(temp_therm_2_test[10000:])
+laser_sim  = np.array(temp_therm_laser_test[10000:])
+
+# On calcule l'écart en pourcentage à chaque point dans le temps :
+# Attention à vérifier que thermX_ref ne contient pas de zéros pour éviter la division par zéro.
+err_therm1_percent = 100 * np.abs(therm1_sim - therm1_ref) / np.abs(therm1_ref)
+err_therm2_percent = 100 * np.abs(therm2_sim - therm2_ref) / np.abs(therm2_ref)
+err_laser_percent  = 100 * np.abs(laser_sim - laser_ref)   / np.abs(laser_ref)
+
+# On récupère l'écart maximal pour chaque thermistance
+max_err_therm1 = np.max(err_therm1_percent)
+max_err_therm2 = np.max(err_therm2_percent)
+max_err_laser  = np.max(err_laser_percent)
+
+print(f"Écart max Thermistance 1 (en %) : {max_err_therm1:.2f}")
+print(f"Écart max Thermistance 2 (en %) : {max_err_therm2:.2f}")
+print(f"Écart max Laser         (en %) : {max_err_laser:.2f}")
+
+# Si on veut aussi l'écart maximal parmi TOUTES les thermistances :
+all_errors_percent = np.concatenate([err_therm1_percent, err_therm2_percent, err_laser_percent])
+max_err_all = np.max(all_errors_percent)
+print(f"Écart max global (en %) : {max_err_all:.2f}")
 
 
 plt.figure(figsize=(10, 5))

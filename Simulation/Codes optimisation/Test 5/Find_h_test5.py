@@ -164,33 +164,6 @@ for h in h_values:
 
         print(len(times), len(temp_therm_1_test), len(temp_therm_1_ref))
 
-        plt.figure(figsize=(10, 5))
-
-        # Thermistance 1
-        plt.plot(times, temp_therm_1_ref, linestyle='-', color='r', label='Réf Thermistance 1')
-        plt.plot(times, temp_therm_1_test, linestyle='--', color='r', 
-         label=f'Test Thermistance 1')
-
-
-        # Thermistance 2
-        plt.plot(times, temp_therm_2_ref, linestyle='-', color='y', label='Réf Thermistance 2')
-        plt.plot(times, temp_therm_2_test, linestyle='--', color='r', 
-         label=f'Test Thermistance 2 ')
-
-
-        # Thermistance 3
-        plt.plot(times, temp_therm_laser_ref, linestyle='-', color='k', label='Réf Thermistance Laser')
-        plt.plot(times, temp_therm_laser_test, linestyle='--', color='r', 
-         label=f'Test Thermistance laser')
-
-
-        plt.xlabel("Temps (s)")
-        plt.ylabel("Température (°C)")
-        plt.title("Comparaison des températures des thermistances")
-        plt.legend()
-        plt.grid(True)
-        plt.show()
-
 
 errors = np.array(errors).reshape(len(h_values), len(P_values))
 

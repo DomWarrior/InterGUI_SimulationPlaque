@@ -1,0 +1,29 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Valeurs de h testées (en W/m²)
+h_values = np.array([11.9, 12.0, 12.1, 12.2, 12.3, 12.4, 12.5])
+
+# Erreur globale pour chaque test
+error_Global_test1 = np.array([3.60, 3.34, 3.08, 2.83, 2.58, 2.51, 2.64])
+error_Global_test2 = np.array([2.69, 2.57, 2.46, 2.34, 2.23, 2.12, 2.01])
+error_Global_test3 = np.array([2.39, 2.26, 2.13, 2.00, 1.87, 1.75, 1.67])
+
+plt.figure(figsize=(10,8))
+plt.plot(h_values, error_Global_test1, marker='o', linestyle='-', label='Test 1')
+plt.plot(h_values, error_Global_test2, marker='s', linestyle='-', label='Test 2')
+plt.plot(h_values, error_Global_test3, marker='^', linestyle='-', label='Test 3')
+
+plt.xlabel('Coefficient de convection h (W/m²)')
+plt.ylabel('Erreur max globale (%)')
+plt.ylim(0, 4)
+
+# Affichage des annotations (valeurs en %) pour chaque point
+for i, h in enumerate(h_values):
+    plt.text(h, error_Global_test1[i] + 0.2, f"{error_Global_test1[i]:.2f}%", ha='center', color='blue')
+    plt.text(h, error_Global_test2[i] + 0.2, f"{error_Global_test2[i]:.2f}%", ha='center', color='orange')
+    plt.text(h, error_Global_test3[i] + 0.2, f"{error_Global_test3[i]:.2f}%", ha='center', color='green')
+
+plt.legend()
+plt.grid(True)
+plt.show()
