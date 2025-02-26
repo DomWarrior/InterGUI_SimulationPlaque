@@ -1,8 +1,10 @@
 import csv
 import numpy as np
+import numpy as np
+import matplotlib.pyplot as plt
 
 
-with open('Simulation\kest1C.csv','r') as csv_files:
+with open('Simulation\Données Brutes\Bontest1.csv','r') as csv_files:
     reader = csv.reader(csv_files, delimiter=';')
 
     temps = []
@@ -21,3 +23,8 @@ with open('Simulation\kest1C.csv','r') as csv_files:
         except: 
             pass
     csv_files.close()
+
+plt.plot(temps, Actu)
+plt.plot(temps, T2)
+plt.plot(temps, Laser)
+plt.show()
