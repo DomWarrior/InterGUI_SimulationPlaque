@@ -130,7 +130,7 @@ temp_therm_laser_ref = [val + 0.3 for val in temp_therm_laser_ref]
 A = 0.83
 
 h_values = 12.5
-P_values = 1.32
+P_values = 1.43
 errors = []
 
 

@@ -10,19 +10,20 @@ error_Global_test2 = np.array([2.69, 2.57, 2.46, 2.34, 2.23, 2.12, 2.01])
 error_Global_test3 = np.array([2.39, 2.26, 2.13, 2.00, 1.87, 1.75, 1.67])
 
 plt.figure(figsize=(10,8))
-plt.plot(h_values, error_Global_test1, marker='o', linestyle='-', label='Test 1')
-plt.plot(h_values, error_Global_test2, marker='s', linestyle='-', label='Test 2')
-plt.plot(h_values, error_Global_test3, marker='^', linestyle='-', label='Test 3')
+plt.plot(h_values, error_Global_test1, marker='o', linestyle='-', label='Test 1', linewidth=2, markersize=8)
+plt.plot(h_values, error_Global_test2, marker='s', linestyle='-', label='Test 2', linewidth=2, markersize=8)
+plt.plot(h_values, error_Global_test3, marker='^', linestyle='-', label='Test 3', linewidth=2, markersize=8)
 
-plt.xlabel('Coefficient de convection h (W/m²)')
-plt.ylabel('Erreur max globale (%)')
+plt.xlabel('Coefficient de convection h (W/m²K)',fontsize=13)
+plt.ylabel('Erreur max globale (%)',fontsize=13)
 plt.ylim(0, 4)
+plt.tick_params(axis='both', which='major', labelsize=12)
 
 # Affichage des annotations (valeurs en %) pour chaque point
 for i, h in enumerate(h_values):
-    plt.text(h, error_Global_test1[i] + 0.2, f"{error_Global_test1[i]:.2f}%", ha='center', color='blue')
-    plt.text(h, error_Global_test2[i] + 0.2, f"{error_Global_test2[i]:.2f}%", ha='center', color='orange')
-    plt.text(h, error_Global_test3[i] + 0.2, f"{error_Global_test3[i]:.2f}%", ha='center', color='green')
+    plt.text(h, error_Global_test1[i] + 0.2, f"{error_Global_test1[i]:.2f}%", ha='center', color='blue', fontsize=11)
+    plt.text(h, error_Global_test2[i] + 0.2, f"{error_Global_test2[i]:.2f}%", ha='center', color='orange', fontsize=11)
+    plt.text(h, error_Global_test3[i] + 0.2, f"{error_Global_test3[i]:.2f}%", ha='center', color='green', fontsize=11)
 
 plt.legend()
 plt.grid(True)

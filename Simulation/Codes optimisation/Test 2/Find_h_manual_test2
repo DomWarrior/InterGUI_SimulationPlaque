@@ -131,7 +131,7 @@ temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[12226:], T2[1222
 
 
 h_values = 12.5
-P_values = 2.35
+P_values = 2.31
 errors = []
 
 
