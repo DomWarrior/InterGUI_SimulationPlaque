@@ -1,0 +1,1029 @@
+import tkinter as tk
+from tkinter import ttk, messagebox, filedialog
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.animation import FuncAnimation
+from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
+import json
+import csv
+import os
+from matplotlib.figure import Figure
+
+class SimulationInterface:
+    def __init__(self, master):
+        self.master = master
+        self.master.title("Simulation Thermique de Plaque - Interface de Contrôle")
+        self.master.geometry("1280x720")
+        self.master.minsize(1200, 700)
+        
+        # Style de l'application
+        self.style = ttk.Style()
+        self.style.theme_use('clam')  # Thème plus moderne
+        
+        # Couleurs et style
+        bg_color = "#f5f5f5"
+        header_bg = "#e0e0e0"
+        frame_bg = "#f0f0f0"
+        
+        self.style.configure('TFrame', background=frame_bg)
+        self.style.configure('Header.TFrame', background=header_bg)
+        self.style.configure('Header.TLabel', background=header_bg, font=('Arial', 11, 'bold'))
+        self.style.configure('Section.TLabel', font=('Arial', 10, 'bold'))
+        self.style.configure('TLabel', background=frame_bg, font=('Arial', 9))
+        self.style.configure('TButton', font=('Arial', 9))
+        self.style.configure('TEntry', font=('Arial', 9))
+        
+        self.master.configure(bg=bg_color)
+        
+        # Initialiser les données de simulation
+        self.init_simulation_data()
+        
+        # Créer les variables pour les paramètres
+        self.create_variables()
+        
+        # Créer l'interface
+        self.create_interface()
+        
+        # Charger les paramètres depuis le fichier JSON
+        self.load_parameters("parametres_simulationYD.json")
+    
+    def init_simulation_data(self):
+        """Initialise les variables de données pour la simulation"""
+        self.compteur = 0
+        self.temp_therm_1 = []
+        self.temp_therm_2 = []
+        self.temp_therm_laser = []
+        self.energie_list = []
+        self.current_time = 0
+        self.frame_count = 0
+        self.simulation_running = False
+        self.anim = None
+        self.T = None
+        self.view_mode = tk.StringVar(value="2D")  # Mode par défaut
+        
+    def create_variables(self):
+        """Crée toutes les variables tkinter pour les paramètres"""
+        # Propriétés thermiques
+        self.var_k = tk.DoubleVar(value=167)
+        self.var_p = tk.DoubleVar(value=2700)
+        self.var_cp = tk.DoubleVar(value=900)
+        
+        # Dimensions plaque
+        self.var_Lx = tk.DoubleVar(value=0.061)
+        self.var_Ly = tk.DoubleVar(value=0.117)
+        self.var_e = tk.DoubleVar(value=0.00165)
+        
+        # Convection
+        self.var_T_air = tk.DoubleVar(value=297.47)
+        self.var_h = tk.DoubleVar(value=10)
+        
+        # Discrétisation
+        self.var_n_x = tk.IntVar(value=61)
+        self.var_n_y = tk.IntVar(value=117)
+        
+        # Simulation
+        self.var_temps_simulation = tk.DoubleVar(value=1000)
+        self.var_P_ac = tk.DoubleVar(value=1.1)
+        self.var_pos_ac_x = tk.IntVar(value=30)
+        self.var_pos_ac_y = tk.IntVar(value=15)
+        self.var_nx_ac = tk.IntVar(value=15)
+        self.var_ny_ac = tk.IntVar(value=15)
+        self.var_P_pert = tk.DoubleVar(value=0)
+        self.var_pos_pert_x = tk.IntVar(value=60)
+        self.var_pos_pert_y = tk.IntVar(value=60)
+        self.var_nx_pert = tk.IntVar(value=5)
+        self.var_ny_pert = tk.IntVar(value=5)
+        
+        # Variables d'animation
+        self.var_show_actuator = tk.BooleanVar(value=True)
+        self.var_show_perturbation = tk.BooleanVar(value=True)
+        self.var_temperature_min = tk.DoubleVar(value=20)
+        self.var_temperature_max = tk.DoubleVar(value=30)
+        self.var_animation_speed = tk.IntVar(value=50)
+        
+        # Variables d'interface
+        self.selected_chart = tk.StringVar(value="Carte Thermique")
+        self.status_var = tk.StringVar(value="Prêt pour la simulation")
+        
+    def create_interface(self):
+        """Crée l'interface utilisateur complète"""
+        # Frame principal divisé en 2 parties
+        main_paned = ttk.PanedWindow(self.master, orient=tk.HORIZONTAL)
+        main_paned.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Partie gauche : panneau de contrôle
+        self.control_frame = ttk.Frame(main_paned)
+        main_paned.add(self.control_frame, weight=40)
+        
+        # Partie droite : visualisation
+        self.visualization_frame = ttk.Frame(main_paned)
+        main_paned.add(self.visualization_frame, weight=60)
+        
+        # Construction du panneau de contrôle (gauche)
+        self.create_control_panel()
+        
+        # Construction de la zone de visualisation (droite)
+        self.create_visualization_panel()
+        
+        # Barre d'état
+        status_bar = ttk.Label(self.master, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
+        status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+    
+    def create_control_panel(self):
+        """Crée le panneau de contrôle avec sections"""
+        # Section Variables Physiques
+        self.create_section_header(self.control_frame, "Variables physiques")
+        physics_frame = ttk.Frame(self.control_frame)
+        physics_frame.pack(fill=tk.X, pady=0)
+        
+        # En-têtes des colonnes
+        headers = ["Composante", "Constantes", "Valeur actuelle", "Valeur désirée"]
+        for i, header in enumerate(headers):
+            ttk.Label(physics_frame, text=header, style='Header.TLabel', anchor=tk.CENTER).grid(
+                row=0, column=i, padx=5, pady=2, sticky=tk.EW)
+        
+        # Création des entrées pour les propriétés thermiques
+        row = 1
+        
+        # Propriétés thermiques
+        ttk.Label(physics_frame, text="Conductivité Thermique").grid(row=row, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Label(physics_frame, text="W/mK").grid(row=row, column=1, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(physics_frame, textvariable=self.var_k, width=15).grid(row=row, column=2, padx=5, pady=2)
+        ttk.Entry(physics_frame, width=15).grid(row=row, column=3, padx=5, pady=2)
+        row += 1
+        
+        ttk.Label(physics_frame, text="Densité").grid(row=row, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Label(physics_frame, text="kg/m³").grid(row=row, column=1, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(physics_frame, textvariable=self.var_p, width=15).grid(row=row, column=2, padx=5, pady=2)
+        ttk.Entry(physics_frame, width=15).grid(row=row, column=3, padx=5, pady=2)
+        row += 1
+        
+        ttk.Label(physics_frame, text="Capacité Calorifique").grid(row=row, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Label(physics_frame, text="J/kgK").grid(row=row, column=1, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(physics_frame, textvariable=self.var_cp, width=15).grid(row=row, column=2, padx=5, pady=2)
+        ttk.Entry(physics_frame, width=15).grid(row=row, column=3, padx=5, pady=2)
+        row += 1
+        
+        ttk.Label(physics_frame, text="Température Ambiante").grid(row=row, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Label(physics_frame, text="K").grid(row=row, column=1, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(physics_frame, textvariable=self.var_T_air, width=15).grid(row=row, column=2, padx=5, pady=2)
+        ttk.Entry(physics_frame, width=15).grid(row=row, column=3, padx=5, pady=2)
+        row += 1
+        
+        ttk.Label(physics_frame, text="Coefficient Convection").grid(row=row, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Label(physics_frame, text="W/m²K").grid(row=row, column=1, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(physics_frame, textvariable=self.var_h, width=15).grid(row=row, column=2, padx=5, pady=2)
+        ttk.Entry(physics_frame, width=15).grid(row=row, column=3, padx=5, pady=2)
+        
+        # Section Dimensions
+        self.create_section_header(self.control_frame, "Dimensions de la plaque")
+        dims_frame = ttk.Frame(self.control_frame)
+        dims_frame.pack(fill=tk.X, pady=0)
+        
+        # Entrées pour les dimensions
+        ttk.Label(dims_frame, text="Longueur (Lx, m):").grid(row=0, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(dims_frame, textvariable=self.var_Lx, width=15).grid(row=0, column=1, padx=5, pady=2)
+        
+        ttk.Label(dims_frame, text="Largeur (Ly, m):").grid(row=0, column=2, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(dims_frame, textvariable=self.var_Ly, width=15).grid(row=0, column=3, padx=5, pady=2)
+        
+        ttk.Label(dims_frame, text="Épaisseur (e, m):").grid(row=1, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(dims_frame, textvariable=self.var_e, width=15).grid(row=1, column=1, padx=5, pady=2)
+        
+        ttk.Label(dims_frame, text="Points en x:").grid(row=1, column=2, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(dims_frame, textvariable=self.var_n_x, width=15).grid(row=1, column=3, padx=5, pady=2)
+        
+        ttk.Label(dims_frame, text="Points en y:").grid(row=2, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(dims_frame, textvariable=self.var_n_y, width=15).grid(row=2, column=1, padx=5, pady=2)
+        
+        # Section Actuateur et Perturbation
+        self.create_section_header(self.control_frame, "Paramètres d'actuation")
+        act_frame = ttk.Frame(self.control_frame)
+        act_frame.pack(fill=tk.X, pady=0)
+        
+        ttk.Label(act_frame, text="Puissance (W):").grid(row=0, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(act_frame, textvariable=self.var_P_ac, width=15).grid(row=0, column=1, padx=5, pady=2)
+        
+        ttk.Label(act_frame, text="Position X:").grid(row=0, column=2, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(act_frame, textvariable=self.var_pos_ac_x, width=15).grid(row=0, column=3, padx=5, pady=2)
+        
+        ttk.Label(act_frame, text="Position Y:").grid(row=1, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(act_frame, textvariable=self.var_pos_ac_y, width=15).grid(row=1, column=1, padx=5, pady=2)
+        
+        ttk.Label(act_frame, text="Taille X:").grid(row=1, column=2, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(act_frame, textvariable=self.var_nx_ac, width=15).grid(row=1, column=3, padx=5, pady=2)
+        
+        ttk.Label(act_frame, text="Taille Y:").grid(row=2, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(act_frame, textvariable=self.var_ny_ac, width=15).grid(row=2, column=1, padx=5, pady=2)
+        
+        # Section Perturbation
+        self.create_section_header(self.control_frame, "Paramètres de perturbation")
+        pert_frame = ttk.Frame(self.control_frame)
+        pert_frame.pack(fill=tk.X, pady=0)
+        
+        ttk.Label(pert_frame, text="Puissance (W):").grid(row=0, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(pert_frame, textvariable=self.var_P_pert, width=15).grid(row=0, column=1, padx=5, pady=2)
+        
+        ttk.Label(pert_frame, text="Position X:").grid(row=0, column=2, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(pert_frame, textvariable=self.var_pos_pert_x, width=15).grid(row=0, column=3, padx=5, pady=2)
+        
+        ttk.Label(pert_frame, text="Position Y:").grid(row=1, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(pert_frame, textvariable=self.var_pos_pert_y, width=15).grid(row=1, column=1, padx=5, pady=2)
+        
+        ttk.Label(pert_frame, text="Taille X:").grid(row=1, column=2, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(pert_frame, textvariable=self.var_nx_pert, width=15).grid(row=1, column=3, padx=5, pady=2)
+        
+        ttk.Label(pert_frame, text="Taille Y:").grid(row=2, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(pert_frame, textvariable=self.var_ny_pert, width=15).grid(row=2, column=1, padx=5, pady=2)
+        
+        # Section Paramètres de Simulation
+        self.create_section_header(self.control_frame, "Paramètres de simulation")
+        sim_frame = ttk.Frame(self.control_frame)
+        sim_frame.pack(fill=tk.X, pady=0)
+        
+        ttk.Label(sim_frame, text="Temps de simulation (s):").grid(row=0, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(sim_frame, textvariable=self.var_temps_simulation, width=15).grid(row=0, column=1, padx=5, pady=2)
+        
+        ttk.Label(sim_frame, text="Température min (°C):").grid(row=0, column=2, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(sim_frame, textvariable=self.var_temperature_min, width=15).grid(row=0, column=3, padx=5, pady=2)
+        
+        ttk.Label(sim_frame, text="Température max (°C):").grid(row=1, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Entry(sim_frame, textvariable=self.var_temperature_max, width=15).grid(row=1, column=1, padx=5, pady=2)
+        
+        ttk.Label(sim_frame, text="Vitesse d'animation:").grid(row=1, column=2, padx=5, pady=2, sticky=tk.W)
+        ttk.Scale(sim_frame, from_=10, to=200, orient=tk.HORIZONTAL, variable=self.var_animation_speed).grid(
+            row=1, column=3, padx=5, pady=2, sticky=tk.EW)
+        
+        # Options d'affichage
+        options_frame = ttk.Frame(sim_frame)
+        options_frame.grid(row=2, column=0, columnspan=4, padx=5, pady=2, sticky=tk.W)
+        
+        ttk.Checkbutton(options_frame, text="Afficher l'actuateur", variable=self.var_show_actuator).pack(side=tk.LEFT, padx=5)
+        ttk.Checkbutton(options_frame, text="Afficher la perturbation", variable=self.var_show_perturbation).pack(side=tk.LEFT, padx=5)
+        
+        # Section Graphiques
+        self.create_section_header(self.control_frame, "Graphiques")
+        graph_frame = ttk.Frame(self.control_frame)
+        graph_frame.pack(fill=tk.X, pady=0)
+        
+        ttk.Label(graph_frame, text="Type de visualisation:").pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Radiobutton(graph_frame, text="2D", variable=self.view_mode, value="2D").pack(side=tk.LEFT, padx=5)
+        ttk.Radiobutton(graph_frame, text="3D", variable=self.view_mode, value="3D").pack(side=tk.LEFT, padx=5)
+        
+        chart_combo = ttk.Combobox(graph_frame, textvariable=self.selected_chart, 
+                                  values=["Carte Thermique", "Évolution Température", "Énergie Interne"])
+        chart_combo.pack(side=tk.LEFT, padx=5)
+        chart_combo.bind("<<ComboboxSelected>>", lambda e: self.change_chart())
+        
+        # Section Exécution et enregistrement
+        self.create_section_header(self.control_frame, "Exécution et enregistrement")
+        exec_frame = ttk.Frame(self.control_frame)
+        exec_frame.pack(fill=tk.X, pady=0)
+        
+        # Boutons d'exécution
+        btn_frame1 = ttk.Frame(exec_frame)
+        btn_frame1.pack(fill=tk.X, pady=5)
+        
+        ttk.Button(btn_frame1, text="Lancer la simulation", command=self.start_simulation).pack(
+            side=tk.LEFT, padx=5, pady=5, fill=tk.X, expand=True)
+        ttk.Button(btn_frame1, text="Arrêter la simulation", command=self.stop_simulation).pack(
+            side=tk.LEFT, padx=5, pady=5, fill=tk.X, expand=True)
+        
+        btn_frame2 = ttk.Frame(exec_frame)
+        btn_frame2.pack(fill=tk.X, pady=5)
+        
+        ttk.Button(btn_frame2, text="Charger Paramètres", command=self.load_parameters_dialog).pack(
+            side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        ttk.Button(btn_frame2, text="Sauvegarder Paramètres", command=self.save_parameters_dialog).pack(
+            side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        
+        btn_frame3 = ttk.Frame(exec_frame)
+        btn_frame3.pack(fill=tk.X, pady=5)
+        
+        ttk.Button(btn_frame3, text="Sauvegarder Résultats", command=self.save_results).pack(
+            side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        ttk.Button(btn_frame3, text="Réinitialiser", command=self.reset_simulation).pack(
+            side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+            
+    def create_section_header(self, parent, text):
+        """Crée un en-tête de section avec style"""
+        frame = ttk.Frame(parent, style='Header.TFrame')
+        frame.pack(fill=tk.X, pady=(5, 0))
+        ttk.Label(frame, text=text, style='Header.TLabel').pack(anchor=tk.W, padx=5, pady=3)
+        
+    def create_visualization_panel(self):
+        """Crée le panneau de visualisation"""
+        # En-tête du panneau
+        self.create_section_header(self.visualization_frame, "Simulation Thermique")
+        
+        # Frame pour les graphiques
+        graph_container = ttk.Frame(self.visualization_frame)
+        graph_container.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Figure pour la carte thermique (2D/3D)
+        self.fig_thermal = Figure(figsize=(6, 6), dpi=100)
+        self.ax_thermal = self.fig_thermal.add_subplot(111)
+        
+        self.canvas_thermal = FigureCanvasTkAgg(self.fig_thermal, master=graph_container)
+        self.canvas_thermal.draw()
+        self.canvas_thermal.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        
+        toolbar_frame = ttk.Frame(graph_container)
+        toolbar_frame.pack(fill=tk.X)
+        toolbar = NavigationToolbar2Tk(self.canvas_thermal, toolbar_frame)
+        toolbar.update()
+        
+        # Créer aussi les figures pour les autres graphiques (masqués par défaut)
+        self.fig_temp = Figure(figsize=(6, 6), dpi=100)
+        self.ax_temp = self.fig_temp.add_subplot(111)
+        self.ax_temp.set_xlabel("Temps (s)")
+        self.ax_temp.set_ylabel("Température (°C)")
+        self.ax_temp.set_title("Évolution des températures")
+        self.ax_temp.grid(True)
+        
+        self.canvas_temp = FigureCanvasTkAgg(self.fig_temp, master=graph_container)
+        self.canvas_temp.get_tk_widget().pack_forget()  # Masqué par défaut
+        
+        self.fig_energy = Figure(figsize=(6, 6), dpi=100)
+        self.ax_energy = self.fig_energy.add_subplot(111)
+        self.ax_energy.set_xlabel("Temps (s)")
+        self.ax_energy.set_ylabel("Énergie interne (J)")
+        self.ax_energy.set_title("Évolution de l'énergie interne")
+        self.ax_energy.grid(True)
+        
+        self.canvas_energy = FigureCanvasTkAgg(self.fig_energy, master=graph_container)
+        self.canvas_energy.get_tk_widget().pack_forget()  # Masqué par défaut
+    
+    def change_chart(self):
+        """Change le graphique affiché en fonction de la sélection"""
+        selected = self.selected_chart.get()
+        
+        # Cacher tous les canvas
+        self.canvas_thermal.get_tk_widget().pack_forget()
+        self.canvas_temp.get_tk_widget().pack_forget()
+        self.canvas_energy.get_tk_widget().pack_forget()
+        
+        # Afficher le canvas sélectionné
+        if selected == "Carte Thermique":
+            self.canvas_thermal.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        elif selected == "Évolution Température":
+            self.update_temperature_graph()
+            self.canvas_temp.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        elif selected == "Énergie Interne":
+            self.update_energy_graph()
+            self.canvas_energy.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+    
+    def load_parameters(self, filename=None):
+        """Charge les paramètres à partir d'un fichier JSON"""
+        try:
+            if not filename:
+                return
+            
+            with open(filename, 'r') as f:
+                params = json.load(f)
+                
+            # Mettre à jour les variables avec les paramètres chargés
+            # Propriétés thermiques
+            self.var_k.set(params["proprietes_thermiques"]["k"])
+            self.var_p.set(params["proprietes_thermiques"]["p"])
+            self.var_cp.set(params["proprietes_thermiques"]["cp"])
+            
+            # Dimensions plaque
+            self.var_Lx.set(params["dimensions_plaque"]["Lx"])
+            self.var_Ly.set(params["dimensions_plaque"]["Ly"])
+            self.var_e.set(params["dimensions_plaque"]["e"])
+            
+            # Convection
+            self.var_T_air.set(params["convection"]["T_air"])
+            self.var_h.set(params["convection"]["h"])
+            
+            # Discrétisation
+            self.var_n_x.set(params["discretisation"]["n_x"])
+            self.var_n_y.set(params["discretisation"]["n_y"])
+            
+            # Simulation
+            self.var_temps_simulation.set(params["simulation"]["temps_simulation"])
+            self.var_P_ac.set(params["simulation"]["P_ac"])
+            self.var_pos_ac_x.set(params["simulation"]["pos_ac"][0])
+            self.var_pos_ac_y.set(params["simulation"]["pos_ac"][1])
+            self.var_nx_ac.set(params["simulation"]["nx_ac"])
+            self.var_ny_ac.set(params["simulation"]["ny_ac"])
+            self.var_P_pert.set(params["simulation"]["P_pert"])
+            self.var_pos_pert_x.set(params["simulation"]["pos_pert"][0])
+            self.var_pos_pert_y.set(params["simulation"]["pos_pert"][1])
+            self.var_nx_pert.set(params["simulation"]["nx_pert"])
+            self.var_ny_pert.set(params["simulation"]["ny_pert"])
+            
+            self.status_var.set(f"Paramètres chargés depuis {filename}")
+        except Exception as e:
+            messagebox.showerror("Erreur", f"Impossible de charger les paramètres: {str(e)}")
+    
+    def load_parameters_dialog(self):
+        """Ouvre une boîte de dialogue pour charger les paramètres"""
+        filename = filedialog.askopenfilename(
+            title="Charger les paramètres",
+            filetypes=[("Fichiers JSON", "*.json"), ("Tous les fichiers", "*.*")]
+        )
+        if filename:
+            self.load_parameters(filename)
+    
+    def save_parameters_dialog(self):
+        """Ouvre une boîte de dialogue pour sauvegarder les paramètres"""
+        filename = filedialog.asksaveasfilename(
+            title="Sauvegarder les paramètres",
+            filetypes=[("Fichiers JSON", "*.json"), ("Tous les fichiers", "*.*")],
+            defaultextension=".json"
+        )
+        if filename:
+            self.save_parameters(filename)
+    
+    def save_parameters(self, filename):
+        """Sauvegarde les paramètres dans un fichier JSON"""
+        try:
+            params = {
+                "proprietes_thermiques": {
+                    "k": self.var_k.get(),
+                    "p": self.var_p.get(),
+                    "cp": self.var_cp.get()
+                },
+                "dimensions_plaque": {
+                    "Lx": self.var_Lx.get(),
+                    "Ly": self.var_Ly.get(),
+                    "e": self.var_e.get()
+                },
+                "convection": {
+                    "T_air": self.var_T_air.get(),
+                    "h": self.var_h.get()
+                },
+                "discretisation": {
+                    "n_x": self.var_n_x.get(),
+                    "n_y": self.var_n_y.get()
+                },
+                "simulation": {
+                    "temps_simulation": self.var_temps_simulation.get(),
+                    "P_ac": self.var_P_ac.get(),
+                    "pos_ac": [self.var_pos_ac_x.get(), self.var_pos_ac_y.get()],
+                    "nx_ac": self.var_nx_ac.get(),
+                    "ny_ac": self.var_ny_ac.get(),
+                    "P_pert": self.var_P_pert.get(),
+                    "pos_pert": [self.var_pos_pert_x.get(), self.var_pos_pert_y.get()],
+                    "nx_pert": self.var_nx_pert.get(),
+                    "ny_pert": self.var_ny_pert.get()
+                }
+            }
+            
+            with open(filename, 'w') as f:
+                json.dump(params, f, indent=2)
+                
+            self.status_var.set(f"Paramètres sauvegardés dans {filename}")
+        except Exception as e:
+            messagebox.showerror("Erreur", f"Impossible de sauvegarder les paramètres: {str(e)}")
+    
+    def get_simulation_parameters(self):
+        """Récupère tous les paramètres nécessaires à la simulation"""
+        # Récupérer les paramètres des variables tkinter
+        k = self.var_k.get()
+        p = self.var_p.get()
+        cp = self.var_cp.get()
+        
+        Lx = self.var_Lx.get()
+        Ly = self.var_Ly.get()
+        e = self.var_e.get()
+        
+        T_air = self.var_T_air.get()
+        h = self.var_h.get()
+        
+        n_x = self.var_n_x.get()
+        n_y = self.var_n_y.get()
+        
+        temps_simulation = self.var_temps_simulation.get()
+        P_ac = self.var_P_ac.get()
+        pos_ac = (self.var_pos_ac_x.get(), self.var_pos_ac_y.get())
+        nx_ac = self.var_nx_ac.get()
+        ny_ac = self.var_ny_ac.get()
+        
+        P_pert = self.var_P_pert.get()
+        pos_pert = (self.var_pos_pert_x.get(), self.var_pos_pert_y.get())
+        nx_pert = self.var_nx_pert.get()
+        ny_pert = self.var_ny_pert.get()
+        
+        # Calcul des paramètres dérivés
+        dx = Lx / n_x
+        dy = Ly / n_y
+        dz = e
+        vol = dx * dy * e
+        
+        a = k / (cp * p)
+        dt = 0.001  # Pas de temps fixe pour la simulation
+        Nt = int(temps_simulation / dt)
+        
+        # Vérifier la stabilité numérique
+        stability = (a * dt) / min(dx**2, dy**2)
+        if stability >= 0.5:
+            messagebox.showwarning(
+                "Avertissement de stabilité", 
+                f"Le critère de stabilité est de {stability:.4f}, ce qui est supérieur à 0.5. "
+                "La simulation pourrait être instable. Considérez réduire le pas de temps ou augmenter la discrétisation."
+            )
+        
+        return {
+            'k': k, 'p': p, 'cp': cp,
+            'Lx': Lx, 'Ly': Ly, 'e': e,
+            'T_air': T_air, 'h': h,
+            'n_x': n_x, 'n_y': n_y,
+            'temps_simulation': temps_simulation,
+            'P_ac': P_ac, 'pos_ac': pos_ac, 'nx_ac': nx_ac, 'ny_ac': ny_ac,
+            'P_pert': P_pert, 'pos_pert': pos_pert, 'nx_pert': nx_pert, 'ny_pert': ny_pert,
+            'dx': dx, 'dy': dy, 'dz': dz, 'vol': vol,
+            'a': a, 'dt': dt, 'Nt': Nt
+        }
+    
+    def save_results(self, filename=None):
+        """Sauvegarde les résultats de la simulation dans un fichier CSV"""
+        if not self.temp_therm_1:
+            messagebox.showinfo("Information", "Aucune donnée de simulation à sauvegarder.")
+            return
+            
+        if filename is None:
+            filename = filedialog.asksaveasfilename(
+                title="Sauvegarder les résultats",
+                filetypes=[("Fichiers CSV", "*.csv"), ("Tous les fichiers", "*.*")],
+                defaultextension=".csv"
+            )
+        
+        if not filename:
+            return
+            
+        try:
+            # Calcul des temps associés à chaque mesure
+            times = [i * 0.001 for i in range(len(self.temp_therm_1))]  # dt = 0.001
+
+            # Définition des en-têtes du fichier CSV
+            fieldnames = ["Temps (s)", "Température Thermistance 1 (°C)", "Température Thermistance 2 (°C)", 
+                         "Température Thermistance Laser (°C)", "Énergie Interne (J)"]
+
+            # Écriture des données dans le fichier CSV
+            with open(filename, mode='w', newline='') as file:
+                writer = csv.DictWriter(file, fieldnames=fieldnames)
+
+                # Écrire l'en-tête
+                writer.writeheader()
+
+                # Écrire les données ligne par ligne
+                for time, temp1, temp2, temp_laser, energy in zip(times, self.temp_therm_1, self.temp_therm_2, 
+                                                                self.temp_therm_laser, self.energie_list):
+                    writer.writerow({
+                        "Temps (s)": time,
+                        "Température Thermistance 1 (°C)": temp1,
+                        "Température Thermistance 2 (°C)": temp2,
+                        "Température Thermistance Laser (°C)": temp_laser,
+                        "Énergie Interne (J)": energy
+                    })
+                    
+            self.status_var.set(f"Résultats sauvegardés dans {filename}")
+        except Exception as e:
+            messagebox.showerror("Erreur", f"Impossible de sauvegarder les résultats: {str(e)}")
+
+    def reset_simulation(self):
+        """Réinitialise la simulation"""
+        self.stop_simulation()
+        self.temp_therm_1 = []
+        self.temp_therm_2 = []
+        self.temp_therm_laser = []
+        self.energie_list = []
+        self.current_time = 0
+        self.frame_count = 0
+        
+        # Réinitialiser les graphiques
+        self.ax_thermal.clear()
+        self.canvas_thermal.draw()
+        
+        self.ax_temp.clear()
+        self.ax_temp.set_xlabel("Temps (s)")
+        self.ax_temp.set_ylabel("Température (°C)")
+        self.ax_temp.set_title("Évolution des températures")
+        self.ax_temp.grid(True)
+        self.canvas_temp.draw()
+        
+        self.ax_energy.clear()
+        self.ax_energy.set_xlabel("Temps (s)")
+        self.ax_energy.set_ylabel("Énergie interne (J)")
+        self.ax_energy.set_title("Évolution de l'énergie interne")
+        self.ax_energy.grid(True)
+        self.canvas_energy.draw()
+        
+        self.status_var.set("Simulation réinitialisée")
+
+    def vector_evolution_temperature(self, T, params):
+        """Calcule l'évolution de la température pour un pas de temps"""
+        T_new = T.copy()
+        
+        # Paramètres
+        a = params['a']
+        dt = params['dt']
+        dx = params['dx']
+        dy = params['dy']
+        dz = params['dz']
+        vol = params['vol']
+        h = params['h']
+        T_air = params['T_air']
+        p = params['p']
+        cp = params['cp']
+        
+        pos_ac = params['pos_ac']
+        nx_ac = params['nx_ac']
+        ny_ac = params['ny_ac']
+        P_ac = params['P_ac']
+        
+        pos_pert = params['pos_pert']
+        nx_pert = params['nx_pert']
+        ny_pert = params['ny_pert']
+        P_pert = params['P_pert']
+
+        # Conduction éléments centraux
+        T_new[1:-1, 1:-1] = T[1:-1, 1:-1] + a*dt*((T[2:, 1:-1] - 2*T[1:-1, 1:-1] + T[0:-2, 1:-1])/(dy**2) +
+                                               (T[1:-1, 2:] - 2*T[1:-1, 1:-1] + T[1:-1, 0:-2])/(dx**2))
+        
+        # Conduction bords et coins
+        T_new[0, 1:-1] += a * dt * ((T[1, 1:-1] - T[0, 1:-1]) / dy**2 +
+                                  (T[0, 2:] - 2 * T[0, 1:-1] + T[0, :-2]) / dx**2)
+        
+        T_new[-1, 1:-1] += a * dt * ((T[-2, 1:-1] - T[-1, 1:-1]) / dy**2 +
+                                   (T[-1, 2:] - 2 * T[-1, 1:-1] + T[-1, :-2]) / dx**2)
+        
+        T_new[1:-1, 0] += a * dt * ((T[2:, 0] - 2 * T[1:-1, 0] + T[:-2, 0]) / dy**2 +
+                                  (T[1:-1, 1] - T[1:-1, 0]) / dx**2)
+        
+        T_new[1:-1, -1] += a * dt * ((T[2:, -1] - 2 * T[1:-1, -1] + T[:-2, -1]) / dy**2 +
+                                   (T[1:-1, -2] - T[1:-1, -1]) / dx**2)
+        
+        # Coins
+        T_new[0, 0] += a * dt * ((T[1, 0] - T[0, 0]) / dy**2 + (T[0, 1] - T[0, 0]) / dx**2)   
+        T_new[0, -1] += a * dt * ((T[1, -1] - T[0, -1]) / dy**2 + (T[0, -2] - T[0, -1]) / dx**2) 
+        T_new[-1, 0] += a * dt * ((T[-2, 0] - T[-1, 0]) / dy**2 + (T[-1, 1] - T[-1, 0]) / dx**2)   
+        T_new[-1, -1] += a * dt * ((T[-2, -1] - T[-1, -1]) / dy**2 + (T[-1, -2] - T[-1, -1]) / dx**2)
+
+        # Convection
+        Coeff = (h*dt)/(p*cp)
+        T_new[0, :] += 1*Coeff*(T_air-T[0,:])*((dz*dx)/(vol))     # haut
+        T_new[-1, :] += 1*Coeff*(T_air-T[-1,:])*((dz*dx)/(vol))   # bas
+        T_new[:,0] += 1*Coeff*(T_air-T[:,0])*((dz*dy)/(vol))      # gauche
+        T_new[:,-1] += 1*Coeff*(T_air-T[:,-1])*((dz*dy)/(vol))    # droite
+        T_new[:,:] += 2*Coeff*(T_air-T[:,:])*((dx*dy)/vol)        # dessus/dessous
+
+        # Actuateur
+        if P_ac > 0:
+            i, j = pos_ac
+            i_min = max(0, i - nx_ac//2)
+            i_max = min(T.shape[0], i + nx_ac//2)
+            j_min = max(0, j - ny_ac//2)
+            j_max = min(T.shape[1], j + ny_ac//2)
+            
+            n_elements = (i_max - i_min) * (j_max - j_min)
+            if n_elements > 0:
+                P_par_element = P_ac / n_elements
+                T_new[i_min:i_max, j_min:j_max] += (P_par_element*dt)/(p*cp*vol)
+
+        # Perturbation
+        if P_pert > 0:
+            k, l = pos_pert
+            k_min = max(0, k - nx_pert//2)
+            k_max = min(T.shape[0], k + nx_pert//2)
+            l_min = max(0, l - ny_pert//2)
+            l_max = min(T.shape[1], l + ny_pert//2)
+            
+            n_elements = (k_max - k_min) * (l_max - l_min)
+            if n_elements > 0:
+                P_par_element = P_pert / n_elements
+                T_new[k_min:k_max, l_min:l_max] += (P_par_element*dt)/(p*cp*vol)
+
+        return T_new
+
+    def start_simulation(self):
+        """Démarre la simulation"""
+        if self.simulation_running:
+            messagebox.showinfo("Information", "Une simulation est déjà en cours.")
+            return
+            
+        # Réinitialiser les données de simulation
+        self.temp_therm_1 = []
+        self.temp_therm_2 = []
+        self.temp_therm_laser = []
+        self.energie_list = []
+        self.current_time = 0
+        self.frame_count = 0
+        
+        # Obtenir les paramètres actuels
+        params = self.get_simulation_parameters()
+        
+        # Initialiser la matrice de température
+        self.T = np.ones((params['n_x'], params['n_y'])) * params['T_air']
+        
+        # Démarrer l'animation en fonction du mode de visualisation
+        if self.view_mode.get() == "2D":
+            self.start_2d_animation(params)
+        else:
+            self.start_3d_animation(params)
+            
+        self.simulation_running = True
+        self.status_var.set("Simulation en cours...")
+
+    def stop_simulation(self):
+        """Arrête la simulation"""
+        if not self.simulation_running:
+            return
+            
+        if self.anim:
+            self.anim.event_source.stop()
+            
+        self.simulation_running = False
+        self.status_var.set(f"Simulation arrêtée à {self.current_time:.2f} s")
+        
+        # Mise à jour des graphiques de température et d'énergie
+        self.update_temperature_graph()
+        self.update_energy_graph()
+
+    def update_temperature_graph(self):
+        """Met à jour le graphique d'évolution de la température"""
+        if not self.temp_therm_1:
+            return
+            
+        self.ax_temp.clear()
+        
+        # Échantillonnage pour éviter de tracer trop de points
+        step = max(1, len(self.temp_therm_1) // 1000)
+        times = [i * 0.001 for i in range(0, len(self.temp_therm_1), step)]  # dt = 0.001
+        temp1 = self.temp_therm_1[::step]
+        temp2 = self.temp_therm_2[::step]
+        temp_laser = self.temp_therm_laser[::step]
+        
+        self.ax_temp.plot(times, temp1, 'r-', label='Thermistance 1')
+        self.ax_temp.plot(times, temp2, 'g--', label='Thermistance 2')
+        self.ax_temp.plot(times, temp_laser, 'b-.', label='Position Laser')
+        
+        self.ax_temp.set_xlabel("Temps (s)")
+        self.ax_temp.set_ylabel("Température (°C)")
+        self.ax_temp.set_title(f"Évolution des températures - Temps simulé: {self.current_time:.2f} s")
+        self.ax_temp.legend()
+        self.ax_temp.grid(True)
+        
+        self.canvas_temp.draw()
+
+    def update_energy_graph(self):
+        """Met à jour le graphique d'évolution de l'énergie interne"""
+        if not self.energie_list:
+            return
+            
+        self.ax_energy.clear()
+        
+        # Échantillonnage pour éviter de tracer trop de points
+        step = max(1, len(self.energie_list) // 1000)
+        times = [i * 0.001 for i in range(0, len(self.energie_list), step)]  # dt = 0.001
+        energy = self.energie_list[::step]
+        
+        self.ax_energy.plot(times, energy, 'b-')
+        self.ax_energy.set_xlabel("Temps (s)")
+        self.ax_energy.set_ylabel("Énergie interne (J)")
+        self.ax_energy.set_title(f"Évolution de l'énergie interne - Temps simulé: {self.current_time:.2f} s")
+        self.ax_energy.grid(True)
+        
+        self.canvas_energy.draw()
+
+    def start_2d_animation(self, params):
+        """Démarre l'animation en mode 2D"""
+        # Préparation du graphique 2D
+        self.ax_thermal.clear()
+        
+        # Afficher la carte thermique initiale
+        vmin = self.var_temperature_min.get() + 273.15
+        vmax = self.var_temperature_max.get() + 273.15
+        
+        self.im = self.ax_thermal.imshow(
+            self.T - 273.15,  # Convertir en Celsius pour l'affichage
+            cmap='hot',
+            interpolation='nearest',
+            origin='lower',
+            vmin=self.var_temperature_min.get(),
+            vmax=self.var_temperature_max.get()
+        )
+        
+        # Ajouter une barre de couleur
+        self.fig_thermal.colorbar(self.im, ax=self.ax_thermal, label='Température (°C)')
+        
+        # Ajout des labels et titre
+        self.ax_thermal.set_title("Simulation Thermique 2D")
+        self.ax_thermal.set_xlabel("Position X")
+        self.ax_thermal.set_ylabel("Position Y")
+        
+        # Si l'option est activée, indiquer la position de l'actuateur
+        if self.var_show_actuator.get():
+            i, j = params['pos_ac']
+            nx, ny = params['nx_ac'], params['ny_ac']
+            rect = plt.Rectangle((j - ny//2, i - nx//2), ny, nx, 
+                                edgecolor='lime', facecolor='none', linewidth=2)
+            self.ax_thermal.add_patch(rect)
+            
+        # Si l'option est activée et la perturbation est non nulle, indiquer la position de la perturbation
+        if self.var_show_perturbation.get() and params['P_pert'] > 0:
+            k, l = params['pos_pert']
+            nx, ny = params['nx_pert'], params['ny_pert']
+            rect = plt.Rectangle((l - ny//2, k - nx//2), ny, nx, 
+                                edgecolor='cyan', facecolor='none', linewidth=2)
+            self.ax_thermal.add_patch(rect)
+            
+        # Indiquer la position des thermistances
+        self.ax_thermal.plot(15, 30, 'ro', markersize=5, label="Thermistance 1")
+        self.ax_thermal.plot(60, 30, 'go', markersize=5, label="Thermistance 2")
+        self.ax_thermal.plot(105, 30, 'bo', markersize=5, label="Position Laser")
+        self.ax_thermal.legend(loc='upper right')
+        
+        # Mettre à jour le canvas
+        self.canvas_thermal.draw()
+        
+        # Fonction d'initialisation pour FuncAnimation
+        def init():
+            self.im.set_data(self.T - 273.15)
+            return [self.im]
+        
+        # Fonction de mise à jour pour FuncAnimation
+        def update(frame):
+            if not self.simulation_running or self.current_time >= params['temps_simulation']:
+                self.anim.event_source.stop()
+                self.simulation_running = False
+                self.status_var.set(f"Simulation terminée à {self.current_time:.2f} s")
+                self.update_temperature_graph()
+                self.update_energy_graph()
+                return [self.im]
+            
+            self.frame_count += 1
+            
+            # Calculer l'évolution pour 100 pas de temps
+            for _ in range(100):
+                self.T = self.vector_evolution_temperature(self.T, params)
+                
+                # Enregistrer les températures aux positions des thermistances
+                temp1 = self.T[30, 15] - 273.15
+                temp2 = self.T[30, 60] - 273.15
+                temp_laser = self.T[30, 105] - 273.15
+                
+                self.temp_therm_1.append(temp1)
+                self.temp_therm_2.append(temp2)
+                self.temp_therm_laser.append(temp_laser)
+                
+                # Calculer l'énergie interne
+                E_current = params['p'] * params['cp'] * np.sum(self.T) * params['vol']
+                self.energie_list.append(E_current)
+                
+                self.current_time += params['dt']
+            
+            # Mettre à jour l'affichage
+            self.im.set_data(self.T - 273.15)
+            self.ax_thermal.set_title(f"Simulation Thermique 2D - Temps: {self.current_time:.2f} s")
+            
+            # Mettre à jour la barre de status
+            self.status_var.set(f"Simulation en cours... Temps: {self.current_time:.2f} s / {params['temps_simulation']:.2f} s")
+            
+            # Si le temps est un multiple de 10, mettre à jour les graphiques
+            if int(self.current_time) % 10 == 0 and int(self.current_time) > 0:
+                if self.selected_chart.get() == "Évolution Température":
+                    self.update_temperature_graph()
+                elif self.selected_chart.get() == "Énergie Interne":
+                    self.update_energy_graph()
+            
+            return [self.im]
+        
+        # Lancer l'animation
+        self.anim = FuncAnimation(
+            self.fig_thermal,
+            update,
+            init_func=init,
+            frames=None,  # Animation continue
+            interval=self.var_animation_speed.get(),
+            blit=True
+        )
+        
+        self.canvas_thermal.draw()
+
+    def start_3d_animation(self, params):
+        """Démarre l'animation en mode 3D"""
+        # Préparation du graphique 3D
+        self.ax_thermal.clear()
+        
+        # Préparer la grille pour la surface 3D
+        x = np.linspace(0, params['Lx'], params['n_x'])
+        y = np.linspace(0, params['Ly'], params['n_y'])
+        X, Y = np.meshgrid(x, y)
+        
+        # Convertir en Celsius pour l'affichage
+        Z = self.T.T - 273.15
+        
+        # Afficher la surface initiale
+        vmin = self.var_temperature_min.get()
+        vmax = self.var_temperature_max.get()
+        
+        self.surf = self.ax_thermal.plot_surface(
+            X, Y, Z, 
+            cmap='hot', 
+            vmin=vmin, 
+            vmax=vmax,
+            rstride=1, 
+            cstride=1, 
+            linewidth=0, 
+            antialiased=False
+        )
+        
+        # Ajouter une barre de couleur
+        self.fig_thermal.colorbar(self.surf, ax=self.ax_thermal, shrink=0.5, aspect=5, label='Température (°C)')
+        
+        # Ajout des labels et titre
+        self.ax_thermal.set_title("Simulation Thermique 3D")
+        self.ax_thermal.set_xlabel("Position X (m)")
+        self.ax_thermal.set_ylabel("Position Y (m)")
+        self.ax_thermal.set_zlabel("Température (°C)")
+        
+        # Mettre à jour le canvas
+        self.canvas_thermal.draw()
+        
+        # Fonction de mise à jour pour FuncAnimation
+        def update(frame):
+            if not self.simulation_running or self.current_time >= params['temps_simulation']:
+                self.anim.event_source.stop()
+                self.simulation_running = False
+                self.status_var.set(f"Simulation terminée à {self.current_time:.2f} s")
+                self.update_temperature_graph()
+                self.update_energy_graph()
+                return
+            
+            self.frame_count += 1
+            
+            # Calculer l'évolution pour 100 pas de temps
+            for _ in range(100):
+                self.T = self.vector_evolution_temperature(self.T, params)
+                
+                # Enregistrer les températures aux positions des thermistances
+                temp1 = self.T[30, 15] - 273.15
+                temp2 = self.T[30, 60] - 273.15
+                temp_laser = self.T[30, 105] - 273.15
+                
+                self.temp_therm_1.append(temp1)
+                self.temp_therm_2.append(temp2)
+                self.temp_therm_laser.append(temp_laser)
+                
+                # Calculer l'énergie interne
+                E_current = params['p'] * params['cp'] * np.sum(self.T) * params['vol']
+                self.energie_list.append(E_current)
+                
+                self.current_time += params['dt']
+            
+            # Mettre à jour l'affichage 3D
+            self.ax_thermal.clear()
+            Z = self.T.T - 273.15
+            self.surf = self.ax_thermal.plot_surface(
+                X, Y, Z, 
+                cmap='hot', 
+                vmin=vmin, 
+                vmax=vmax,
+                rstride=1, 
+                cstride=1, 
+                linewidth=0, 
+                antialiased=False
+            )
+            
+            self.ax_thermal.set_title(f"Simulation Thermique 3D - Temps: {self.current_time:.2f} s")
+            self.ax_thermal.set_xlabel("Position X (m)")
+            self.ax_thermal.set_ylabel("Position Y (m)")
+            self.ax_thermal.set_zlabel("Température (°C)")
+            
+            # Mettre à jour la barre de status
+            self.status_var.set(f"Simulation en cours... Temps: {self.current_time:.2f} s / {params['temps_simulation']:.2f} s")
+            
+            # Si le temps est un multiple de 10, mettre à jour les graphiques
+            if int(self.current_time) % 10 == 0 and int(self.current_time) > 0:
+                if self.selected_chart.get() == "Évolution Température":
+                    self.update_temperature_graph()
+                elif self.selected_chart.get() == "Énergie Interne":
+                    self.update_energy_graph()
+            
+            return self.surf
+        
+        # Lancer l'animation
+        self.anim = FuncAnimation(
+            self.fig_thermal,
+            update,
+            frames=None,  # Animation continue
+            interval=self.var_animation_speed.get(),
+            blit=False  # Pour la 3D, blit doit être False
+        )
+        
+        self.canvas_thermal.draw()
+
+
+# Fonction principale pour exécuter l'application
+def main():
+    root = tk.Tk()
+    app = SimulationInterface(root)
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
