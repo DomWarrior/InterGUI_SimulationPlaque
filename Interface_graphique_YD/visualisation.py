@@ -9,7 +9,7 @@ from tkinter import ttk
 # Classe fictive pour simuler le moteur de simulation (à remplacer par votre vraie implémentation)
 class SimulationEngine:
     def initial_temperature(self):
-        return np.ones((100, 100)) * 300  # Température initiale de 300 K (exemple)
+        return np.ones((1, 1)) * 400  # Température initiale de 300 K (exemple)
     
 
 class VisualisationManager:

@@ -2,7 +2,8 @@
     "proprietes_thermiques": {
       "k": 167,
       "p": 2700,
-      "cp": 900
+      "cp": 900,
+      "T_plaque": 297.47
     },
     "dimensions_plaque": {
       "Lx": 0.061,

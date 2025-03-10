@@ -62,12 +62,12 @@ class SimulationEngine:
         T_new[:,:] += 2*Coeff*(T_air-T[:,:])*((dx*dy)/vol)        # dessus/dessous
 
         # Actuateur
-        if P_ac > 0:
+        if P_ac is not None:
             i, j = pos_ac
             i_min = max(0, i - nx_ac//2)
-            i_max = min(T.shape[0], i + nx_ac//2)
+            i_max = min(T.shape[0], i + nx_ac//2+1)
             j_min = max(0, j - ny_ac//2)
-            j_max = min(T.shape[1], j + ny_ac//2)
+            j_max = min(T.shape[1], j + ny_ac//2+1)
             
             n_elements = (i_max - i_min) * (j_max - j_min)
             if n_elements > 0:
@@ -75,7 +75,7 @@ class SimulationEngine:
                 T_new[i_min:i_max, j_min:j_max] += (P_par_element*dt)/(p*cp*vol)
 
         # Perturbation
-        if P_pert > 0:
+        if P_pert is not None:
             k, l = pos_pert
             k_min = max(0, k - nx_pert//2)
             k_max = min(T.shape[0], k + nx_pert//2)

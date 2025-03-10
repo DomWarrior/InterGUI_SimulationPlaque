@@ -9,6 +9,9 @@ from simulation import SimulationEngine
 from visualisation import VisualisationManager
 from utils import load_json_parameters, save_json_parameters, save_results_to_csv
 
+
+
+
 class SimulationInterface:
     def __init__(self, master):
         self.master = master
@@ -70,6 +73,7 @@ class SimulationInterface:
         self.var_k = tk.DoubleVar(value=167)
         self.var_p = tk.DoubleVar(value=2700)
         self.var_cp = tk.DoubleVar(value=900)
+        self.var_T_plaque = tk.DoubleVar(value=297.47)
         
         # Dimensions plaque
         self.var_Lx = tk.DoubleVar(value=0.061)
@@ -78,6 +82,7 @@ class SimulationInterface:
         
         # Convection
         self.var_T_air = tk.DoubleVar(value=297.47)
+       # self.var_T_plaque = tk.DoubleVar(value=297.47)
         self.var_h = tk.DoubleVar(value=10)
         
         # Discrétisation
@@ -174,6 +179,9 @@ class SimulationInterface:
         
         ttk.Label(frame, text="Capacité calorifique (cp, J/kgK):").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_cp, width=10).grid(row=2, column=1, padx=5, pady=2)
+
+        ttk.Label(frame, text="Température initiale de la plaque (K):").grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_T_plaque, width=10).grid(row=3, column=1, padx=5, pady=2)
         
         self.create_section_header(self.tab_params_physiques, "Convection")
         
@@ -344,6 +352,8 @@ class SimulationInterface:
         ttk.Button(btn_frame, text="Réinitialiser", command=self.reset_simulation).grid(
             row=2, column=1, padx=5, pady=5, sticky=tk.W+tk.E)
             
+
+
     def create_section_header(self, parent, text):
         """Crée un en-tête de section avec style"""
         frame = ttk.Frame(parent, style='Header.TFrame')
@@ -363,6 +373,8 @@ class SimulationInterface:
             self.var_k.set(params["proprietes_thermiques"]["k"])
             self.var_p.set(params["proprietes_thermiques"]["p"])
             self.var_cp.set(params["proprietes_thermiques"]["cp"])
+            self.var_T_plaque.set(params["proprietes_thermiques"]["T_plaque"])
+
             
             # Dimensions plaque
             self.var_Lx.set(params["dimensions_plaque"]["Lx"])
@@ -372,6 +384,7 @@ class SimulationInterface:
             # Convection
             self.var_T_air.set(params["convection"]["T_air"])
             self.var_h.set(params["convection"]["h"])
+        
             
             # Discrétisation
             self.var_n_x.set(params["discretisation"]["n_x"])
@@ -420,7 +433,8 @@ class SimulationInterface:
                 "proprietes_thermiques": {
                     "k": self.var_k.get(),
                     "p": self.var_p.get(),
-                    "cp": self.var_cp.get()
+                    "cp": self.var_cp.get(),
+                    "T_value": self.var_T_plaque.get()
                 },
                 "dimensions_plaque": {
                     "Lx": self.var_Lx.get(),
@@ -460,6 +474,7 @@ class SimulationInterface:
         k = self.var_k.get()
         p = self.var_p.get()
         cp = self.var_cp.get()
+        T_plaque = self.var_T_plaque.get()
         
         Lx = self.var_Lx.get()
         Ly = self.var_Ly.get()
@@ -505,6 +520,7 @@ class SimulationInterface:
             'k': k, 'p': p, 'cp': cp,
             'Lx': Lx, 'Ly': Ly, 'e': e,
             'T_air': T_air, 'h': h,
+            'T_plaque':T_plaque,
             'n_x': n_x, 'n_y': n_y,
             'temps_simulation': temps_simulation,
             'P_ac': P_ac, 'pos_ac': pos_ac, 'nx_ac': nx_ac, 'ny_ac': ny_ac,
@@ -576,7 +592,7 @@ class SimulationInterface:
         params = self.get_simulation_parameters()
         
         # Initialiser la matrice de température
-        self.T = np.ones((params['n_x'], params['n_y'])) * params['T_air']
+        self.T = np.ones((params['n_x'], params['n_y'])) * params['T_plaque']
         
         # Démarrer les animations
         self.simulation_running = True
