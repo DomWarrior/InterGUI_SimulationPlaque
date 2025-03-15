@@ -1,0 +1,35 @@
+{
+    "propriétés_thermiques": {
+        "k":167,
+        "p":2700,
+        "cp":900,
+        "T_plaque": 297.47
+    },
+    "dimensions_plaque": {
+        "Lx":0.061,
+        "Ly":0.117,
+        "e":0.00165
+    },
+    "convection":{
+        "T_air":297.47,
+        "h":12.2
+    },
+    "discretisation":{
+        "n_x":61,
+        "n_y":117
+    },
+    "simulation":{
+        "temps_simulation":500,
+        "P_ac":1.0,
+        "t_ac":0,
+        "pos_ac":[30,15],
+        "nx_ac":15,
+        "ny_ac":15,
+        "P_pert":0,
+        "t_pert":0,
+        "pos_pert":[60,30],
+        "nx_pert":5,
+        "ny_pert":5,
+        "couplage":1.0
+    }
+}
