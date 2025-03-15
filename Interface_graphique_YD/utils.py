@@ -33,3 +33,30 @@ def save_results_to_csv(filename, times, temp1, temp2, temp_laser, energy):
                 "Température Thermistance Laser (°C)": tl,
                 "Énergie Interne (J)": e
             })
+
+def save_results_to_txt(filename, times, temp1, temp2, temp_laser, energy):
+    """Sauvegarde les résultats dans un fichier TXT avec un format tabulaire"""
+    # Définition des en-têtes
+    header = (
+        f"{'Temps (s)':<15}"
+        f"{'Temp. Thermistance 1 (°C)':<30}"
+        f"{'Temp. Thermistance 2 (°C)':<30}"
+        f"{'Temp. Laser (°C)':<20}"
+        f"{'Énergie Interne (J)':<20}\n"
+    )
+    
+    # Ouverture du fichier en mode écriture
+    with open(filename, mode='w') as file:
+        # Écriture de l'en-tête
+        file.write(header)
+        
+        # Écriture des données ligne par ligne
+        for time, t1, t2, tl, e in zip(times, temp1, temp2, temp_laser, energy):
+            line = (
+                f"{round(time,6):<15}"
+                f"{t1:<30}"
+                f"{t2:<30}"
+                f"{tl:<20}"
+                f"{e:<20}\n"
+            )
+            file.write(line)

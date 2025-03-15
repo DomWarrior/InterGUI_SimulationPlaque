@@ -4,8 +4,7 @@ from matplotlib.animation import FuncAnimation
 from matplotlib.figure import Figure
 import numpy as np
 import tkinter as tk
-from tkinter import ttk
-
+from tkinter import ttk, messagebox
 # Classe fictive pour simuler le moteur de simulation (à remplacer par votre vraie implémentation)
 class SimulationEngine:
     def initial_temperature(self):
@@ -153,6 +152,87 @@ class VisualisationManager:
             toolbar.update()
             toolbar.pack(fill=tk.X)
     
+    # Dans la classe VisualisationManager
+    
+
+    def resume_animations(self):
+        """Reprend les animations avec les paramètres actuels mis à jour"""
+        # Récupérer les paramètres actuels (potentiellement modifiés par l'utilisateur pendant la pause)
+        params = self.controller.get_simulation_parameters()
+        
+        # Conserver la matrice de température actuelle
+        current_T = self.controller.T
+        
+        # Déterminer les types de graphiques actuellement affichés
+        chart1 = self.controller.selected_chart1.get()
+        chart2 = self.controller.selected_chart2.get()
+        
+        # Arrêter complètement les animations existantes
+        self.stop_animations()
+        
+        # Nettoyer les widgets des graphiques pour éviter les superpositions
+        self.clean_graph_widgets(chart1, True)  # Nettoyer graphique du haut
+        self.clean_graph_widgets(chart2, False)  # Nettoyer graphique du bas
+        
+        # Démarrer de nouvelles animations avec les paramètres mis à jour
+        self.start_animations(current_T, params, chart1, chart2)
+
+    def clean_graph_widgets(self, chart_type, is_top=True):
+        """Nettoie les widgets existants pour éviter les superpositions"""
+        if is_top:
+            parent_frame = self.top_graph_frame
+            if chart_type == "Carte Thermique 2D":
+                ax = self.ax_thermal_2d
+                cb_attr = 'cb_thermal_2d'
+            elif chart_type == "Carte Thermique 3D":
+                ax = self.ax_thermal_3d
+                cb_attr = 'cb_thermal_3d'
+            else:
+                return  # Pas besoin de nettoyage pour les autres types de graphiques
+        else:
+            parent_frame = self.bottom_graph_frame
+            if chart_type == "Carte Thermique 2D":
+                ax = self.ax_thermal_2d_bottom
+                cb_attr = 'cb_thermal_2d_bottom'
+            elif chart_type == "Carte Thermique 3D":
+                ax = self.ax_thermal_3d_bottom
+                cb_attr = 'cb_thermal_3d_bottom'
+            else:
+                return  # Pas besoin de nettoyage pour les autres types de graphiques
+        
+        # Nettoyer l'axe
+        ax.clear()
+        
+        # Nettoyer la colorbar si elle existe
+        if hasattr(self, cb_attr) and getattr(self, cb_attr) is not None:
+            try:
+                getattr(self, cb_attr).remove()
+            except (AttributeError, ValueError, KeyError):
+                pass
+            setattr(self, cb_attr, None)
+    
+    def pause_animations(self):
+        """Met en pause les animations"""
+        if hasattr(self, 'anim1') and self.anim1 and hasattr(self.anim1, 'event_source'):
+            self.anim1.event_source.stop()
+        if hasattr(self, 'anim2') and self.anim2 and hasattr(self.anim2, 'event_source'):
+            self.anim2.event_source.stop()
+
+   
+
+    def stop_animations(self):
+        """Arrête complètement les animations"""
+        if hasattr(self, 'anim1') and self.anim1:
+            if hasattr(self.anim1, 'event_source') and self.anim1.event_source:
+                self.anim1.event_source.stop()
+            self.anim1 = None
+        
+        if hasattr(self, 'anim2') and self.anim2:
+            if hasattr(self.anim2, 'event_source') and self.anim2.event_source:
+                self.anim2.event_source.stop()
+            self.anim2 = None
+
+
     def reset_graphs(self):
         """Réinitialise les graphiques actuellement sélectionnés"""
         self.stop_animations()
@@ -298,6 +378,7 @@ class VisualisationManager:
             self.anim2 = None
     
     def start_2d_animation(self, T, params, is_top=True):
+            
         if is_top:
             fig = self.fig_thermal_2d
             ax = self.ax_thermal_2d
@@ -310,24 +391,52 @@ class VisualisationManager:
             canvas = self.canvas_thermal_2d_bottom
             anim_attr = 'anim2'
             cb_attr = 'cb_thermal_2d_bottom'
-            
+        
+        # S'assurer que l'animation existante est arrêtée
+        if hasattr(self, anim_attr) and getattr(self, anim_attr):
+            try:
+                getattr(self, anim_attr).event_source.stop()
+                setattr(self, anim_attr, None)
+            except:
+                pass
+        
+        # Nettoyer l'axe et la colorbar
         ax.clear()
-        vmin = self.controller.var_temperature_min.get()
-        vmax = self.controller.var_temperature_max.get()
+        if hasattr(self, cb_attr) and getattr(self, cb_attr):
+            try:
+                getattr(self, cb_attr).remove()
+            except:
+                pass
+            setattr(self, cb_attr, None)
         
-        im = ax.imshow(T - 273.15, cmap='hot', interpolation='nearest', origin='lower', vmin=vmin, vmax=vmax)
+        # Redessiner le canvas pour effacer tout ce qui reste
+        canvas.draw()
         
-        if getattr(self, cb_attr) is None:
-            cb = fig.colorbar(im, ax=ax, label='Température (°C)')
-            setattr(self, cb_attr, cb)
-        else:
-            cb = getattr(self, cb_attr)
-            cb.update_normal(im)
+        # Initialisation de l'image
+        temp_data = T - 273.15  # Conversion en °C
+        im = ax.imshow(temp_data, cmap='hot', interpolation='nearest', origin='lower')
+        
+        # Création ou mise à jour de la colorbar - approche plus sûre
+        try:
+            # Essayer de supprimer l'ancienne colorbar si elle existe
+            if hasattr(self, cb_attr) and getattr(self, cb_attr) is not None:
+                try:
+                    getattr(self, cb_attr).remove()
+                except (AttributeError, ValueError, KeyError) as e:
+                    # Si une erreur se produit lors de la suppression, simplement ignorer
+                    print(f"Avertissement lors de la suppression de la colorbar: {e}")
+        except Exception as e:
+            print(f"Erreur lors de la gestion de la colorbar: {e}")
+        
+        # Créer une nouvelle colorbar quoi qu'il arrive
+        cb = fig.colorbar(im, ax=ax, label='Température (°C)')
+        setattr(self, cb_attr, cb)
         
         ax.set_title("Simulation Thermique 2D")
         ax.set_xlabel("Position X")
         ax.set_ylabel("Position Y")
         
+        # Dessiner l'actuateur et la perturbation si activés
         if self.controller.var_show_actuator.get():
             i, j = params['pos_ac']
             nx, ny = params['nx_ac'], params['ny_ac']
@@ -339,18 +448,17 @@ class VisualisationManager:
             nx, ny = params['nx_pert'], params['ny_pert']
             rect = plt.Rectangle((l - ny//2, k - nx//2), ny, nx, edgecolor='cyan', facecolor='none', linewidth=2)
             ax.add_patch(rect)
-            
+        
+        # Ajouter les points des thermistances
         ax.plot(15, 30, 'ro', markersize=5, label="Thermistance 1")
         ax.plot(60, 30, 'go', markersize=5, label="Thermistance 2")
         ax.plot(105, 30, 'bo', markersize=5, label="Position Laser")
         ax.legend(loc='upper right')
+        
         canvas.draw()
         
-        def init():
-            im.set_data(T - 273.15)
-            return [im]
-        
         def update(frame):
+            # Vérifier si la simulation doit s'arrêter
             if not self.controller.simulation_running or self.controller.current_time >= params['temps_simulation']:
                 getattr(self, anim_attr).event_source.stop()
                 if is_top:
@@ -361,15 +469,22 @@ class VisualisationManager:
                     self.update_energy_graph(True)
                     self.update_energy_graph(False)
                 return [im]
-            
+            if self.controller.simulation_paused:
+                return [im]
+            # Mettre à jour la simulation si c'est l'animation principale
             if is_top:
-                self.controller.frame_count += 1
-                iterations = int(100 * self.controller.var_speed_factor.get())
-                iterations = max(1, iterations)
-
+                iterations = max(1, int(100 * self.controller.var_speed_factor.get()))
+                
                 for _ in range(iterations):
+                    # Calculer la nouvelle matrice de température
+                    current_params = params.copy()
+                    current_params['current_time'] = self.controller.current_time
+                    
+                    # Calculer la nouvelle matrice de température
                     self.controller.T = self.controller.simulation_engine.vector_evolution_temperature(
-                        self.controller.T, params)
+                        self.controller.T, current_params)
+                    
+                    # Enregistrer les températures aux points de mesure
                     temp1 = self.controller.T[30, 15] - 273.15
                     temp2 = self.controller.T[30, 60] - 273.15
                     temp_laser = self.controller.T[30, 105] - 273.15
@@ -378,31 +493,47 @@ class VisualisationManager:
                     self.controller.temp_therm_2.append(temp2)
                     self.controller.temp_therm_laser.append(temp_laser)
                     
+                    # Calculer l'énergie totale
                     E_current = params['p'] * params['cp'] * np.sum(self.controller.T) * params['vol']
                     self.controller.energie_list.append(E_current)
                     
+                    # Incrémenter le temps
                     self.controller.current_time += params['dt']
                 
+                # Mettre à jour les autres graphiques si nécessaire
                 if self.controller.selected_chart1.get() == "Évolution Température":
                     self.update_temp_graph(True)
                 elif self.controller.selected_chart1.get() == "Énergie Interne":
                     self.update_energy_graph(True)
-                    
+                
                 if self.controller.selected_chart2.get() == "Évolution Température":
                     self.update_temp_graph(False)
                 elif self.controller.selected_chart2.get() == "Énergie Interne":
                     self.update_energy_graph(False)
                 
+                # Mettre à jour le statut
                 self.controller.status_var.set(f"Simulation en cours... Temps: {self.controller.current_time:.2f} s / {params['temps_simulation']:.2f} s")
             
-            im.set_data(self.controller.T - 273.15)
+            # Mettre à jour l'image avec la nouvelle matrice de température
+            temp_data = self.controller.T - 273.15
+            im.set_data(temp_data)
+            
+            # Mettre à jour l'échelle de couleur dynamiquement
+            vmin = np.min(temp_data)
+            vmax = np.max(temp_data)
+            im.set_clim(vmin=vmin, vmax=vmax)
+            
+            # Mettre à jour le titre avec le temps actuel
             ax.set_title(f"Simulation Thermique 2D - Temps: {self.controller.current_time:.2f} s")
-            cb.update_normal(im)
+            
+            # Redessiner le canvas
+            canvas.draw_idle()
+            
             return [im]
         
-        anim = FuncAnimation(fig, update, init_func=init, frames=None, interval=50, blit=True)
+        # Créer l'animation
+        anim = FuncAnimation(fig, update, frames=None, interval=50, blit=True)
         setattr(self, anim_attr, anim)
-        canvas.draw()
 
     def start_3d_animation(self, T, params, is_top=True):
         if is_top:
@@ -424,8 +555,9 @@ class VisualisationManager:
         X, Y = np.meshgrid(x, y)
         Z = T.T - 273.15
         
-        vmin = self.controller.var_temperature_min.get()
-        vmax = self.controller.var_temperature_max.get()
+        # Calculer les valeurs min et max pour l'échelle de couleur
+        vmin = Z.min()
+        vmax = Z.max()
         
         surf = ax.plot_surface(X, Y, Z, cmap='hot', vmin=vmin, vmax=vmax, rstride=2, cstride=2, linewidth=0, antialiased=False)
         
@@ -452,6 +584,10 @@ class VisualisationManager:
                     self.update_temp_graph(False)
                     self.update_energy_graph(True)
                     self.update_energy_graph(False)
+                return
+            
+            # Vérifier si la simulation est en pause
+            if self.controller.simulation_paused:
                 return
             
             if is_top:
@@ -489,11 +625,17 @@ class VisualisationManager:
             
             ax.clear()
             Z = self.controller.T.T - 273.15
+            
+            # Calculer les nouvelles limites d'échelle de couleur dynamiquement
+            vmin = Z.min()
+            vmax = Z.max()
+            
             surf = ax.plot_surface(X, Y, Z, cmap='hot', vmin=vmin, vmax=vmax, rstride=2, cstride=2, linewidth=0, antialiased=False)
             ax.set_title(f"Simulation Thermique 3D - Temps: {self.controller.current_time:.2f} s")
             ax.set_xlabel("Position X (m)")
             ax.set_ylabel("Position Y (m)")
             ax.set_zlabel("Température (°C)")
+            cb = getattr(self, cb_attr)
             cb.update_normal(surf)
             return surf
         
@@ -504,6 +646,9 @@ class VisualisationManager:
 class SimulationInterface:
     def __init__(self, root):
         self.root = root
+        self.simulation_running = False
+        self.simulation_paused = False  # Ajouter cette ligne
+        self.current_time = 0
         self.simulation_running = False
         self.current_time = 0
         self.frame_count = 0
@@ -583,6 +728,23 @@ class SimulationInterface:
             chart2 = self.selected_chart2.get()
             self.vis_manager.start_animations(self.T, params, chart1, chart2)
             self.status_var.set("Simulation en cours...")
+    
+    # Ajouter cette méthode à la classe SimulationInterface
+    def pause_simulation(self):
+        """Met la simulation en pause ou la reprend"""
+        if self.simulation_running:
+            if self.simulation_paused:
+                # Reprendre la simulation
+                self.simulation_paused = False
+                self.status_var.set(f"Simulation en cours... Temps: {self.current_time:.2f} s")
+                self.vis_manager.resume_animations()
+            else:
+                # Mettre en pause
+                self.simulation_paused = True
+                self.status_var.set(f"Simulation en pause à {self.current_time:.2f} s - Vous pouvez modifier les paramètres")
+                self.vis_manager.pause_animations()
+        else:
+            messagebox.showinfo("Information", "Aucune simulation en cours.")
 
     def stop_simulation(self):
         self.simulation_running = False

@@ -7,7 +7,7 @@ import numpy as np
 
 from simulation import SimulationEngine
 from visualisation import VisualisationManager
-from utils import load_json_parameters, save_json_parameters, save_results_to_csv
+from utils import load_json_parameters, save_json_parameters, save_results_to_csv, save_results_to_txt
 
 
 
@@ -63,16 +63,18 @@ class SimulationInterface:
         self.current_time = 0
         self.frame_count = 0
         self.simulation_running = False
+        self.simulation_paused = False  # Nouvelle variable
         self.anim1 = None
         self.anim2 = None
         self.T = None
+            
         
     def create_variables(self):
         """Crée toutes les variables tkinter pour les paramètres"""
         # Propriétés thermiques
-        self.var_k = tk.DoubleVar(value=167)
-        self.var_p = tk.DoubleVar(value=2700)
-        self.var_cp = tk.DoubleVar(value=900)
+        self.var_k = tk.IntVar(value=167)
+        self.var_p = tk.IntVar(value=2700)
+        self.var_cp = tk.IntVar(value=900)
         self.var_T_plaque = tk.DoubleVar(value=297.47)
         
         # Dimensions plaque
@@ -82,7 +84,6 @@ class SimulationInterface:
         
         # Convection
         self.var_T_air = tk.DoubleVar(value=297.47)
-       # self.var_T_plaque = tk.DoubleVar(value=297.47)
         self.var_h = tk.DoubleVar(value=10)
         
         # Discrétisation
@@ -92,11 +93,13 @@ class SimulationInterface:
         # Simulation
         self.var_temps_simulation = tk.DoubleVar(value=1000)
         self.var_P_ac = tk.DoubleVar(value=1.1)
+        self.var_t_ac = tk.DoubleVar(value=0)
         self.var_pos_ac_x = tk.IntVar(value=30)
         self.var_pos_ac_y = tk.IntVar(value=15)
         self.var_nx_ac = tk.IntVar(value=15)
         self.var_ny_ac = tk.IntVar(value=15)
         self.var_P_pert = tk.DoubleVar(value=0)
+        self.var_t_pert = tk.DoubleVar(value=0)
         self.var_pos_pert_x = tk.IntVar(value=60)
         self.var_pos_pert_y = tk.IntVar(value=60)
         self.var_nx_pert = tk.IntVar(value=5)
@@ -105,6 +108,7 @@ class SimulationInterface:
         # Variables d'animation
         self.var_show_actuator = tk.BooleanVar(value=True)
         self.var_show_perturbation = tk.BooleanVar(value=True)
+        self.var_couplage = tk.DoubleVar(value=1.0)
         self.var_temperature_min = tk.DoubleVar(value=20)
         self.var_temperature_max = tk.DoubleVar(value=30)
         self.var_speed_factor = tk.DoubleVar(value=1.0)
@@ -164,7 +168,7 @@ class SimulationInterface:
     
     def create_params_physiques_tab(self):
         """Crée l'onglet des paramètres physiques"""
-        self.create_section_header(self.tab_params_physiques, "Propriétés thermiques")
+        self.create_section_header(self.tab_params_physiques, "Propriétés thermiques de la plaque")
         
         # Créer un cadre pour les propriétés thermiques
         frame = ttk.Frame(self.tab_params_physiques)
@@ -189,7 +193,7 @@ class SimulationInterface:
         frame = ttk.Frame(self.tab_params_physiques)
         frame.pack(fill=tk.X, padx=10, pady=5)
         
-        ttk.Label(frame, text="Température ambiante (T_air, K):").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(frame, text="Température ambiante (K):").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_T_air, width=10).grid(row=0, column=1, padx=5, pady=2)
         
         ttk.Label(frame, text="Coefficient convection (h, W/m²K):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
@@ -229,40 +233,49 @@ class SimulationInterface:
         frame = ttk.Frame(self.tab_actuation)
         frame.pack(fill=tk.X, padx=10, pady=5)
         
-        ttk.Label(frame, text="Puissance (P_ac, W):").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(frame, text="Puissance de l'actuateur (W):").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_P_ac, width=10).grid(row=0, column=1, padx=5, pady=2)
+
+        ttk.Label(frame, text="Appliquer la puissance au temps (s) :").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_t_ac, width=10).grid(row=1, column=1, padx=5, pady=2)
+
+        ttk.Label(frame, text="Couplage thermique :").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_couplage, width=10).grid(row=2, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Position X:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_pos_ac_x, width=10).grid(row=1, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Position X:").grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_pos_ac_x, width=10).grid(row=3, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Position Y:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_pos_ac_y, width=10).grid(row=2, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Position Y:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_pos_ac_y, width=10).grid(row=4, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Taille X:").grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_nx_ac, width=10).grid(row=3, column=1, padx=5, pady=2)
-        
-        ttk.Label(frame, text="Taille Y:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_ny_ac, width=10).grid(row=4, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Taille X:").grid(row=5, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_nx_ac, width=10).grid(row=5, column=1, padx=5, pady=2)
+    
+        ttk.Label(frame, text="Taille Y:").grid(row=6, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_ny_ac, width=10).grid(row=6, column=1, padx=5, pady=2)
         
         self.create_section_header(self.tab_actuation, "Perturbation thermique")
         
         frame = ttk.Frame(self.tab_actuation)
         frame.pack(fill=tk.X, padx=10, pady=5)
         
-        ttk.Label(frame, text="Puissance (P_pert, W):").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(frame, text="Puissance (W):").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_P_pert, width=10).grid(row=0, column=1, padx=5, pady=2)
+
+        ttk.Label(frame, text="Appliquer la perturbation au temps (s):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_t_pert, width=10).grid(row=1, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Position X:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_pos_pert_x, width=10).grid(row=1, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Position X:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_pos_pert_x, width=10).grid(row=2, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Position Y:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_pos_pert_y, width=10).grid(row=2, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Position Y:").grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_pos_pert_y, width=10).grid(row=3, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Taille X:").grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_nx_pert, width=10).grid(row=3, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Taille X:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_nx_pert, width=10).grid(row=4, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Taille Y:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_ny_pert, width=10).grid(row=4, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Taille Y:").grid(row=5, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_ny_pert, width=10).grid(row=5, column=1, padx=5, pady=2)
     
     def create_simulation_tab(self):
         """Crée l'onglet des paramètres de simulation"""
@@ -337,10 +350,9 @@ class SimulationInterface:
         btn_frame = ttk.Frame(self.tab_simulation)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
         
-        ttk.Button(btn_frame, text="Lancer la simulation", command=self.start_simulation).grid(
-            row=0, column=0, padx=5, pady=5, sticky=tk.W+tk.E)
-        ttk.Button(btn_frame, text="Arrêter la simulation", command=self.stop_simulation).grid(
-            row=0, column=1, padx=5, pady=5, sticky=tk.W+tk.E)
+        ttk.Button(btn_frame, text="Lancer la simulation", command=self.start_simulation).grid(row=0, column=0, padx=5, pady=5,sticky=tk.W+tk.E)
+        ttk.Button(btn_frame, text="Pause/Reprendre", command=self.pause_simulation).grid(row=0, column=1, padx=5, pady=5,sticky=tk.W+tk.E)
+        ttk.Button(btn_frame, text="Arrêter la simulation", command=self.stop_simulation).grid(row=0, column=2, padx=5, pady=5,sticky=tk.W+tk.E)
         
         ttk.Button(btn_frame, text="Charger Paramètres", command=self.load_parameters_dialog).grid(
             row=1, column=0, padx=5, pady=5, sticky=tk.W+tk.E)
@@ -360,6 +372,15 @@ class SimulationInterface:
         frame.pack(fill=tk.X, pady=(5, 0))
         ttk.Label(frame, text=text, style='Header.TLabel').pack(anchor=tk.W, padx=5, pady=3)
     
+    def load_parameters_dialog(self):
+        """Ouvre une boîte de dialogue pour charger les paramètres"""
+        filename = filedialog.askopenfilename(
+            title="Charger les paramètres",
+            filetypes=[("Fichiers JSON", "*.json"), ("Tous les fichiers", "*.*")]
+        )
+        if filename:
+            self.load_parameters(filename)
+    
     def load_parameters(self, filename=None):
         """Charge les paramètres à partir d'un fichier JSON"""
         try:
@@ -374,7 +395,6 @@ class SimulationInterface:
             self.var_p.set(params["proprietes_thermiques"]["p"])
             self.var_cp.set(params["proprietes_thermiques"]["cp"])
             self.var_T_plaque.set(params["proprietes_thermiques"]["T_plaque"])
-
             
             # Dimensions plaque
             self.var_Lx.set(params["dimensions_plaque"]["Lx"])
@@ -384,7 +404,6 @@ class SimulationInterface:
             # Convection
             self.var_T_air.set(params["convection"]["T_air"])
             self.var_h.set(params["convection"]["h"])
-        
             
             # Discrétisation
             self.var_n_x.set(params["discretisation"]["n_x"])
@@ -393,28 +412,29 @@ class SimulationInterface:
             # Simulation
             self.var_temps_simulation.set(params["simulation"]["temps_simulation"])
             self.var_P_ac.set(params["simulation"]["P_ac"])
+            self.var_t_ac.set(params["simulation"]["t_ac"])
             self.var_pos_ac_x.set(params["simulation"]["pos_ac"][0])
             self.var_pos_ac_y.set(params["simulation"]["pos_ac"][1])
             self.var_nx_ac.set(params["simulation"]["nx_ac"])
             self.var_ny_ac.set(params["simulation"]["ny_ac"])
             self.var_P_pert.set(params["simulation"]["P_pert"])
+            self.var_t_pert.set(params["simulation"]["t_pert"])
             self.var_pos_pert_x.set(params["simulation"]["pos_pert"][0])
             self.var_pos_pert_y.set(params["simulation"]["pos_pert"][1])
             self.var_nx_pert.set(params["simulation"]["nx_pert"])
             self.var_ny_pert.set(params["simulation"]["ny_pert"])
+            self.var_couplage.set(params["simulation"]["couplage"])
+            
+            # Vous pourriez également vouloir mettre à jour d'autres paramètres comme:
+            # self.var_temperature_min.set(...)
+            # self.var_temperature_max.set(...)
+            # self.var_show_actuator.set(...)
+            # self.var_show_perturbation.set(...)
+            # self.var_speed_factor.set(...)
             
             self.status_var.set(f"Paramètres chargés depuis {filename}")
         except Exception as e:
             messagebox.showerror("Erreur", f"Impossible de charger les paramètres: {str(e)}")
-    
-    def load_parameters_dialog(self):
-        """Ouvre une boîte de dialogue pour charger les paramètres"""
-        filename = filedialog.askopenfilename(
-            title="Charger les paramètres",
-            filetypes=[("Fichiers JSON", "*.json"), ("Tous les fichiers", "*.*")]
-        )
-        if filename:
-            self.load_parameters(filename)
     
     def save_parameters_dialog(self):
         """Ouvre une boîte de dialogue pour sauvegarder les paramètres"""
@@ -434,7 +454,7 @@ class SimulationInterface:
                     "k": self.var_k.get(),
                     "p": self.var_p.get(),
                     "cp": self.var_cp.get(),
-                    "T_value": self.var_T_plaque.get()
+                    "T_plaque": self.var_T_plaque.get()  # Correction du nom de la variable
                 },
                 "dimensions_plaque": {
                     "Lx": self.var_Lx.get(),
@@ -452,13 +472,16 @@ class SimulationInterface:
                 "simulation": {
                     "temps_simulation": self.var_temps_simulation.get(),
                     "P_ac": self.var_P_ac.get(),
+                    "t_ac": self.var_t_ac.get(),  # Ajout de t_ac
                     "pos_ac": [self.var_pos_ac_x.get(), self.var_pos_ac_y.get()],
                     "nx_ac": self.var_nx_ac.get(),
                     "ny_ac": self.var_ny_ac.get(),
                     "P_pert": self.var_P_pert.get(),
+                    "t_pert": self.var_t_pert.get(),  # Ajout de t_pert
                     "pos_pert": [self.var_pos_pert_x.get(), self.var_pos_pert_y.get()],
                     "nx_pert": self.var_nx_pert.get(),
-                    "ny_pert": self.var_ny_pert.get()
+                    "ny_pert": self.var_ny_pert.get(),
+                    "couplage": self.var_couplage.get()  # Correction: utiliser get() au lieu de ()
                 }
             }
             
@@ -496,6 +519,10 @@ class SimulationInterface:
         pos_pert = (self.var_pos_pert_x.get(), self.var_pos_pert_y.get())
         nx_pert = self.var_nx_pert.get()
         ny_pert = self.var_ny_pert.get()
+        couplage = self.var_couplage.get()
+
+        t_ac = self.var_t_ac.get()
+        t_pert = self.var_t_pert.get()
         
         # Calcul des paramètres dérivés
         dx = Lx / n_x
@@ -526,27 +553,28 @@ class SimulationInterface:
             'P_ac': P_ac, 'pos_ac': pos_ac, 'nx_ac': nx_ac, 'ny_ac': ny_ac,
             'P_pert': P_pert, 'pos_pert': pos_pert, 'nx_pert': nx_pert, 'ny_pert': ny_pert,
             'dx': dx, 'dy': dy, 'dz': dz, 'vol': vol,
-            'a': a, 'dt': dt, 'Nt': Nt
+            'a': a, 'dt': dt, 'Nt': Nt, 'couplage':couplage,
+            't_ac': t_ac, 't_pert': t_pert 
         }
     
     def save_results(self, filename=None):
-        """Sauvegarde les résultats de la simulation dans un fichier CSV"""
+        """Sauvegarde les résultats de la simulation dans un fichier TXT"""
         if not self.temp_therm_1:
             messagebox.showinfo("Information", "Aucune donnée de simulation à sauvegarder.")
             return
-            
+                
         if filename is None:
             filename = filedialog.asksaveasfilename(
                 title="Sauvegarder les résultats",
-                filetypes=[("Fichiers CSV", "*.csv"), ("Tous les fichiers", "*.*")],
-                defaultextension=".csv"
+                filetypes=[("Fichiers TXT", "*.txt"), ("Tous les fichiers", "*.*")],
+                defaultextension=".txt"
             )
-        
+            
         if not filename:
             return
-        
+            
         try:
-            save_results_to_csv(
+            save_results_to_txt(
                 filename,
                 [i * 0.001 for i in range(len(self.temp_therm_1))],
                 self.temp_therm_1,
@@ -554,7 +582,7 @@ class SimulationInterface:
                 self.temp_therm_laser,
                 self.energie_list
             )
-            
+                
             self.status_var.set(f"Résultats sauvegardés dans {filename}")
         except Exception as e:
             messagebox.showerror("Erreur", f"Impossible de sauvegarder les résultats: {str(e)}")
@@ -600,6 +628,23 @@ class SimulationInterface:
         
         # Demander au gestionnaire de visualisation de démarrer les animations
         self.vis_manager.start_animations(self.T, params, self.selected_chart1.get(), self.selected_chart2.get())
+
+
+    def pause_simulation(self):
+        """Met la simulation en pause ou la reprend"""
+        if self.simulation_running:
+            if hasattr(self, 'simulation_paused') and self.simulation_paused:
+                # Reprendre la simulation
+                self.simulation_paused = False
+                self.status_var.set(f"Simulation en cours... Temps: {self.current_time:.2f} s")
+                self.vis_manager.resume_animations()
+            else:
+                # Mettre en pause
+                self.simulation_paused = True
+                self.status_var.set(f"Simulation en pause à {self.current_time:.2f} s - Vous pouvez modifier les paramètres")
+                self.vis_manager.pause_animations()
+        else:
+            messagebox.showinfo("Information", "Aucune simulation en cours.")
 
     def stop_simulation(self):
         """Arrête la simulation"""

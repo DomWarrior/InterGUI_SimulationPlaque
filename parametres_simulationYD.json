@@ -21,12 +21,15 @@
     "simulation": {
       "temps_simulation": 1000,
       "P_ac": 1.1,
+      "t_ac": 0,
       "pos_ac": [30, 15],
       "nx_ac": 15,
       "ny_ac": 15,
       "P_pert": 0,
+      "t_pert": 0,
       "pos_pert": [60, 60],
       "nx_pert": 5,
-      "ny_pert": 5
+      "ny_pert": 5,
+      "couplage": 1.0
     }
   }
