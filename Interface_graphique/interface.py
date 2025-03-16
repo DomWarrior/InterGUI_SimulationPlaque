@@ -20,7 +20,7 @@ from matplotlib.figure import Figure                                            
 from simulation_temp import TempératurePlaque                                                       #importation de fichier contenant la modélisation de la température
 from animation import FenêtreAnimations
 from fonctionnalités_interface import sauvegarder_paramètres_json, charger_paramètres_json, sauvegarder_résultats_txt
-
+import numpy as np
 
 class FenêtreInterface:
     '''
@@ -30,14 +30,14 @@ class FenêtreInterface:
 
     def __init__(self, f_interface):
         self.f_interface = f_interface      #création d'une instance qui va représenter la fenêtre principale de l'interface (widget)
-        self.f_interface.titre("Simulation Thermique de la plaque")    #Titre de la fenêtre Tkinter
+        self.f_interface.title("Simulation Thermique de la plaque")     #Titre de la fenêtre Tkinter                                                        
         self.f_interface.geometry("1280x720")      #Taille initiale de la fenêtre lorsque l'utilisateur va lancer le code
 
 
         self.simulation_thermique = TempératurePlaque()   # on crée une instance qui va contenir la fonction qui modélise l'évolution de la température dans la plaque présent dans le fichier simulation.py 
         
         
-        self.style() = ttk.Style()                      #permet d'accéder aux thèmes disponibles et qui va permettre de configurer le style de la fenêtre
+        self.style = ttk.Style()                      #permet d'accéder aux thèmes disponibles et qui va permettre de configurer le style de la fenêtre
         self.style.theme_use('clam')                    # thème choisi
 
         couleur_fond = "#f5f5f5"                        #couleur de fond de la fenêtre
@@ -51,18 +51,19 @@ class FenêtreInterface:
 
         self.style.configure('Cadre.TFrame', background=couleur_cadre)
         self.style.configure('EnTete.TFrame', background=couleur_entete)
-        self.style.configure('EnTete.Etiquette', background=couleur_entete, font=('Arial', 11, 'bold'))
-        self.style.configure('Section.Etiquette', font=('Arial', 10, 'bold'))
+        self.style.configure('EnTete.TLabel', background=couleur_entete, font=('Arial', 11, 'bold'))
+        self.style.configure('Section.TLabel', font=('Arial', 10, 'bold'))
         self.style.configure('Etiquette.TLabel', background=couleur_cadre, font=('Arial', 9))
         self.style.configure('Bouton.TButton', font=('Arial', 9))
         self.style.configure('Champ.TEntry', font=('Arial', 9))
-        self.f_interface.configure(bg = couleur_fond)
+        self.f_interface.configure(bg=couleur_fond)
+
 
     
         self.initialisation_donnees_simulation()    #instance qui va initialise les données de la simulation
         self.creer_variables()                      #instance qui va créer les variables
         self.creer_interface()                      #instance qui va créer l'interface
-        self.charger_params_sim("paramètres_simulation.json")  #instance qui va charger les paramètres depuis un fichier json
+        self.charger_params("paramètres_simulation.json")  #instance qui va charger les paramètres depuis un fichier json
 
 
     def initialisation_donnees_simulation(self):
@@ -154,7 +155,7 @@ class FenêtreInterface:
 
 
         self.creer_panneau_de_controle()        # Ici on fait appel à la fonction creer_panneau_de_controle définie plus loin dans la classe pour créer le panneau de contrôle
-        self.creer_panneau_visualisation = FenêtreAnimations(self.panneau_visu, self)      #Ici on fait appel à la fonction creer_panneau_visualisation dans la classe du fichier visualisation  pour créer le panneau de visualisation
+        self.panneau_visualisation = FenêtreAnimations(self.panneau_visu, self)      #Ici on fait appel à la fonction creer_panneau_visualisation dans la classe du fichier visualisation  pour créer le panneau de visualisation
 
     def creer_panneau_de_controle(self):
         '''
@@ -351,7 +352,7 @@ class FenêtreInterface:
 
 
 
-        # à revoir pour cea
+        # à revoir pour cela
         
 
         # Créer un frame pour contenir les contrôles de vitesse
@@ -371,7 +372,7 @@ class FenêtreInterface:
 
         for speed in [0.25, 0.5, 1.0, 2.0, 5.0, 10.0]:
             btn = ttk.Button(speeds_frame, text=f"{speed}x", 
-                    command=lambda s=speed: self.var_speed_factor.set(s), 
+                    command=lambda s=speed: self.var_vitesse_animation.set(s), 
                     width=4)
             btn.pack(side=tk.LEFT, padx=2)
 
@@ -424,7 +425,7 @@ class FenêtreInterface:
         selection_graphiques_1.grid(row=1, column=1, columnspan=2, padx=5, pady=2, sticky=tk.W+tk.E)                    #sticky est similaire à fill mais pour l'attribut grid au lieu de fill pour pack . tk.W+Tk.E signifie qu'on va étendre la texte sur toute la cellule  
         
 
-        selection_graphiques_1.bind("<<ComboboxSelected>>", lambda e: self.creer_panneau_visualisation.update_graph_display())          #Enregistrement de la sélection de l'utilisateur et où on va appeler 
+        selection_graphiques_1.bind("<<ComboboxSelected>>", lambda e: self.panneau_visualisation.initialiser_graphique())          #Enregistrement de la sélection de l'utilisateur et où on va appeler 
                                                                                                                                         #la fonction (update_graph_display()) de la classe parent afin d'associer les graphiques sélectionnés 
                                                                                                                                         # au bon endroit dans le fenêtre de droite de l'interface(ici, ce sera dans la sous-fenêtre du haut)
 
@@ -435,7 +436,7 @@ class FenêtreInterface:
         selection_graphiques_2 = ttk.Combobox(frame, textvariable=self.graphique_bottom_selcet, 
                           values=["Carte Thermique 2D", "Carte Thermique 3D", "Évolution Température", "Énergie Interne"])
         selection_graphiques_2.grid(row=2, column=1, columnspan=2, padx=5, pady=2, sticky=tk.W+tk.E)
-        selection_graphiques_2.bind("<<ComboboxSelected>>", lambda e: self.creer_panneau_visualisation.update_graph_display())
+        selection_graphiques_2.bind("<<ComboboxSelected>>", lambda e: self.panneau_visualisation.initialiser_graphique())
 
 
 
@@ -475,10 +476,8 @@ class FenêtreInterface:
 
         frame = ttk.Frame(page, style='EnTete.TFrame')
         frame.pack(fill=tk.X, pady=(5,0))
-        ttk.Label(frame, text=text, style='EnTete.Etiquette').pack(anchor=tk.W, padx=5, pady=3)
+        ttk.Label(frame, text=text, style='EnTete.TLabel').pack(anchor=tk.W, padx=5, pady=3)
 
-
-        pass
 
  
     
@@ -553,16 +552,98 @@ class FenêtreInterface:
 
 
     def lancer_simulation(self):
-        pass
+        '''
+        Cette fonction va s'occuper de démarrer la simulation 
+        '''
+
+        #Vérifier d'abord s'il n'y a pas déjà une simulation en cours
+
+        if self.simulation_run is True:
+            messagebox.showinfo("Information", "Une simulation est déjà en cours.")
+            return
+        
+        # On s'assure que les variables d'intérêts sont vide
+
+        self.temp_therm_1 = []
+        self.temp_therm_2 = []
+        self.temp_therm_laser = []
+        self.energie_list = []
+        self.temps_courant = 0
+        self.compter_frame = 0
+
+        #On récupère les paramètres actuels
+        params = self.recup_params_sim()
+
+        #On initialise la matrice de températures
+        
+        self.T = np.ones((params['n_x'], params['n_y'])) * params["T_plaque"]
+
+
+
+        #On démarre la simulation
+        self.simulation_run = True          # On passe l'état de simulation_run de False à True pour indiquer qu'on veut commencer la simulation
+
+        # En passant à l'état :True , on peut appeler la fonction dans le fichier animation.py qui s'occupe de lancer la simulation en mettant les paramètres.
+        self.panneau_visualisation.lancer_animation(self.T, params, self.graphique_top_select.get(), self.graphique_bottom_selcet.get())
+
+
+
+
 
     def pause_simulation(self):
-        pass
+        '''
+        Cette fonction permet de mettre sur pause la simulation en cours s'il y a effectivement un simulation en cours, 
+        sinon elle renvoie un message d'erreur. Elle utilise les fonctions de animation.py pour effectuer les différentes opérations.
+
+        '''
+
+        if self.simulation_run is True:                             # Si l'animation est en cours
+            if self.simulation_paused:                              # Et si l'animation est déjà sur pause (True)
+                self.simulation_paused = False                      #Alors le prochain clic de l'utilisateur sur le bouton pause va faire poursuivre l'animation  
+                self.panneau_visualisation.poursuivre_animations()
+
+            else:                                                   # Sinon, on met l'animation sur pause 
+                self.simulation_paused = True
+                self.panneau_visualisation.pause_animations()
+        else:
+            messagebox.showinfo('Information', 'Aucune simulation en cours')
+
+
 
     def stop_simulation(self):
-        pass
+        '''
+        Cette fonction permet de mettre d'arrêter la simulation en cours s'il y a effectivement un simulation en cours, 
+        sinon elle renvoie un message d'erreur. Elle utilise les fonctions de animation.py pour effectuer les différentes opérations.
+
+        '''
+
+        if self.simulation_run is True:                             # Si l'animation est en cours
+            self.panneau_visualisation.stop_animations()
+
+            self.simulation_run = False
+        else:
+            messagebox.showinfo('Information', 'Aucune simulation en cours')
+
 
     def reset_simulation(self):
-        pass
+        '''
+        Cette fonction s'occupe de reset les données de la simulation , mais tout en conservant les paramètres
+        '''
+        if self.simulation_run is True:             # Si l'animation est en cours
+        
+            return  messagebox.showinfo('Erreur', 'Vous devez arrêter la simulation avant de la réinitialiser')
+
+
+        self.temp_therm_1 = []
+        self.temp_therm_2 = []
+        self.temp_therm_laser = []
+        self.energie_list = []
+        self.temps_courant = 0
+        self.compter_frame = 0 
+        self.panneau_visualisation.reset_graphiques()
+
+       
+        
 
     def Windows_charger_params(self):
         '''
@@ -699,4 +780,32 @@ class FenêtreInterface:
             messagebox.showerror("Erreur", f"Impossible de sauvegarder les paramètres : {str(erreur)}")
 
     def sauvegarder_resultats(self, fichier=None):
-        pass
+        '''
+        Cette fonction s'occupe d'enregistrer les résultats (réponses en températures des thermistances) dans un fichier .txt
+        '''
+
+        #On vérifie d'abord si des données sont en stock
+        if not self.temp_therm_1 :                      # Si la matrice est vide
+            messagebox.showinfo("Information", "Aucune donnée de simulation en mémoire")
+        
+        if fichier is None:
+            fichier = filedialog.asksaveasfilename(title='Sauvegarder les résultats', filetypes=[("Fichier TXT", "*txt"), ("Tous les fichiers, *.*")],
+                                                   defaultextension=".txt",
+                                                   initialfile="Données_température_thermistance")
+        if not fichier:
+            return
+        
+        try:
+            sauvegarder_résultats_txt(
+                fichier,
+                [i*0.001 for i in range(len(self.temp_therm_1))],
+                self.temp_therm_1,
+                self.temp_therm_2,
+                self.temp_therm_laser,
+                self.energie_list,
+
+            )
+        except Exception as erreur:
+            messagebox.showinfo("Erreur", f"Impossible de sauvegarder: {str(erreur)}")
+
+        

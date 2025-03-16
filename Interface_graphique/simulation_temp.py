@@ -12,7 +12,7 @@ class TempératurePlaque:
     def __init__(self):
         pass                #rien à initialiser 
 
-    def évolution_temp_plaque(self,T,params):       #Ici, T correspont à la matrice de température et params est une variable , qui est en réalité un fichier 
+    def vector_evolution_temperature(self,T,params):       #Ici, T correspont à la matrice de température et params est une variable , qui est en réalité un fichier 
                                                     #json) qui va contenir l'ensemble des paramètres utiles pour la modélisation et qui va falloir extraire
         T_new = T.copy()                            #On crée une copie de T afin de travailler sur une copie de T 
 
