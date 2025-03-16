@@ -584,7 +584,7 @@ class FenêtreInterface:
         self.simulation_run = True          # On passe l'état de simulation_run de False à True pour indiquer qu'on veut commencer la simulation
 
         # En passant à l'état :True , on peut appeler la fonction dans le fichier animation.py qui s'occupe de lancer la simulation en mettant les paramètres.
-        self.panneau_visualisation.lancer_animation(self.T, params, self.graphique_top_select.get(), self.graphique_bottom_selcet.get())
+        self.panneau_visualisation.lancer_animations(self.T, params, self.graphique_top_select.get(), self.graphique_bottom_selcet.get())
 
 
 
@@ -621,6 +621,7 @@ class FenêtreInterface:
             self.panneau_visualisation.stop_animations()
 
             self.simulation_run = False
+            self.simulation_paused = False
         else:
             messagebox.showinfo('Information', 'Aucune simulation en cours')
 
@@ -640,6 +641,11 @@ class FenêtreInterface:
         self.energie_list = []
         self.temps_courant = 0
         self.compter_frame = 0 
+        params = self.recup_params_sim()
+        self.T = np.ones((params['n_x'], params['n_y'])) * params["T_plaque"]
+    
+    # Réinitialiser les états
+        self.simulation_paused = False
         self.panneau_visualisation.reset_graphiques()
 
        
@@ -653,7 +659,7 @@ class FenêtreInterface:
         fichier = filedialog.askopenfilename(title="Charger les paramètres", filetypes=[("Fichiers JSON", "*.json"), ("Tous les fichiers", ".*")]
         )
 
-        if fichier is True:
+        if fichier :
             self.charger_params(fichier)
 
 
@@ -733,7 +739,7 @@ class FenêtreInterface:
                                              initialfile="paramètres_de_la_simulation"
         )
 
-        if fichier is True:
+        if fichier :
             self.sauvegarde_params(fichier)
 
     def sauvegarde_params(self, ficher=None):
@@ -743,26 +749,30 @@ class FenêtreInterface:
 
         try:
             params = {                                                              #format du fichier json
-                "propriétés_thermiques": {
+                "proprietes_thermiques": {
                     "k": self.var_k.get(),
                     "p": self.var_p.get(),
                     "cp": self.var_cp.get(),
                     "T_plaque": self.var_T_plaque.get()
                 },
+                "dimensions_plaque": {
+                    "Lx":self.var_Lx.get(),
+                    "Ly":self.var_Ly.get(),
+                    "e":self.var_e.get()
+                },
                 "convection": {
                     "T_air": self.var_T_air.get(),
                     "h" : self.var_h.get()
                 },
-                "discrétisation" :{
+                "discretisation" :{
                     "n_x": self.var_n_x.get(),
                     "n_y": self.var_n_y
                 },
                 "simulation":{
                     "temps_simulation": self.var_temps_simulation.get(),
                     "P_ac": self.var_P_ac.get(),
-                    "P_ac": self.var_P_ac.get(),
-                    "pos_pert": [self.var_pos_ac_x.get(),self.var_pos_ac_y.get()],
-                    "ny_ac": self.var_ny_ac.get(),
+                    "pos_ac": [self.var_pos_ac_x.get(),self.var_pos_ac_y.get()],
+                    "nx_ac": self.var_nx_ac.get(),
                     "ny_ac": self.var_ny_ac.get(),
                     "P_pert": self.var_P_pert.get(),
                     "t_pert": self.var_t_pert.get(),

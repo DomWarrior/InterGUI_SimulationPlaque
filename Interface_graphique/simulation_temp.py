@@ -17,14 +17,14 @@ class TempératurePlaque:
         T_new = T.copy()                            #On crée une copie de T afin de travailler sur une copie de T 
 
         temps_actuel = params.get('current_time', 0)        #variable qui a été rajouté lorsque j'ai voulu rajouter l'option d'activer l'actuateur ou la perturbation à un temps autre que t=0 pour l'interface graphique 
-        t_ac = params.get('t_ac')
-        t_pert = params.get('t_pert')
+        t_ac = params.get('t_ac', 0)
+        t_pert = params.get('t_pert', 0)
 
         #création des paramètres
         a=params['a']                               #diffusivité thermique
         dt = params['dt']                           #pas de temps (s)
         dx = params['dx']                           #résolution en x (m)
-        dy = params['dx']                           #résolution en y
+        dy = params['dy']                           #résolution en y
         dz = params['dz']                           #résolution en épaisseur
         vol = params['vol']                         #volume (m^3)
         T_air = params['T_air']                     #température de l'air

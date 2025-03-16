@@ -14,7 +14,7 @@ class FenêtreAnimations:
     '''
 
     def __init__(self, fenêtre_main, controlleur):
-        self.fenêtre_main = fenêtre_main             # Cette instance correspond à la fenêtre de gauche de l'interface où l'utilisateur va entrer les données
+        self.fenêtre_main = fenêtre_main             # Cette instance correspond à la fenêtre de droite de l'interface
         self.controlleur = controlleur               # Cette instance va permettre de contrôler la simulation en y stockant les informations, paramètres...
 
         self.fenêtre = ttk.PanedWindow(fenêtre_main, orient=tk.VERTICAL)  # Ici on divise verticalement la fenêtre principale en 2
@@ -186,13 +186,20 @@ class FenêtreAnimations:
         if chart1 in graph_configs:
             ax, canvas, cb_attr = graph_configs[chart1]["top"]
             if cb_attr:
-                cb = getattr(self, cb_attr)
-                if cb is not None:
-                    try:
-                        cb.remove()
-                    except (KeyError, ValueError):
-                        pass
-                    setattr(self, cb_attr, None)
+                if cb_attr == "bc_carte_2D_top":
+                    if self.bc_carte_2D_top is not None:
+                        try:
+                            self.bc_carte_2D_top.remove()
+                        except:
+                            pass
+                        self.bc_carte_2D_top = None
+                elif cb_attr == "bc_carte_3D_top":
+                    if self.bc_carte_3D_top is not None:
+                        try:
+                            # Pour les colorbar 3D, ne pas utiliser remove()
+                            self.bc_carte_3D_top = None
+                        except:
+                            pass
             ax.clear()
             if chart1 == "Évolution Température":
                 ax.set_xlabel("Temps (s)")
@@ -209,13 +216,20 @@ class FenêtreAnimations:
         if chart2 in graph_configs:
             ax, canvas, cb_attr = graph_configs[chart2]["bottom"]
             if cb_attr:
-                cb = getattr(self, cb_attr)
-                if cb is not None:
-                    try:
-                        cb.remove()
-                    except (KeyError, ValueError):
-                        pass
-                    setattr(self, cb_attr, None)
+                if cb_attr == "bc_carte_2D_bottom":
+                    if self.bc_carte_2D_bottom is not None:
+                        try:
+                            self.bc_carte_2D_bottom.remove()
+                        except:
+                            pass
+                        self.bc_carte_2D_bottom = None
+                elif cb_attr == "bc_carte_3D_bottom":
+                    if self.bc_carte_3D_bottom is not None:
+                        try:
+                            # Pour les colorbar 3D, ne pas utiliser remove()
+                            self.bc_carte_3D_bottom = None
+                        except:
+                            pass
             ax.clear()
             if chart2 == "Évolution Température":
                 ax.set_xlabel("Temps (s)")
@@ -287,12 +301,36 @@ class FenêtreAnimations:
         ax.grid(True)
         canvas.draw()
     
-    def lancer_animation(self, T, params, chart1, chart2):
+    def lancer_animations(self, T, params, chart1, chart2):
         '''
         Lance les animations dans les deux sous-fenêtres
         '''
-        self.animation_démarrer(chart1, T, params, top=True)
-        self.animation_démarrer(chart2, T, params, top=False)
+        # Initialiser les graphiques statiques (Évolution Température et Énergie Interne)
+        if chart1 == "Évolution Température":
+            self.update_graph_temp(top=True)
+        elif chart1 == "Énergie Interne":
+            self.update_graph_energie(top=True)
+            
+        if chart2 == "Évolution Température":
+            self.update_graph_temp(top=False)
+        elif chart2 == "Énergie Interne":
+            self.update_graph_energie(top=False)
+        
+        # Démarrer les animations pour les graphiques animés (2D et 3D)
+        if chart1 == "Carte Thermique 2D":
+            self.animation_2D_démarrer(T, params, top=True)
+        elif chart1 == "Carte Thermique 3D":
+            self.animation_3D_démarrer(T, params, top=True)
+        elif chart2 == "Carte Thermique 2D":
+            self.animation_2D_démarrer(T, params, top=False)
+        elif chart2 == "Carte Thermique 3D":
+            self.animation_3D_démarrer(T, params, top=False)
+        else:
+            # Si aucun graphique animé n'est sélectionné, démarrer une animation 2D invisible
+            # pour faire avancer la simulation
+            self.animation_2D_démarrer(T, params, top=True)
+            # Cacher le graphique 2D
+            self.canvas_carte_2D_top.get_tk_widget().pack_forget()
     
     def animation_démarrer(self, type_graphique, T, params, top=True):
         '''
@@ -335,7 +373,7 @@ class FenêtreAnimations:
         self.clean_graph_widgets(chart2, False)  # Nettoyer graphique du bas
         
         # Démarrer de nouvelles animations avec les paramètres mis à jour
-        self.lancer_animation(current_T, params, chart1, chart2)
+        self.lancer_animations(current_T, params, chart1, chart2)
     
     def clean_graph_widgets(self, type_graphique, top=True):
         '''
@@ -375,14 +413,24 @@ class FenêtreAnimations:
         '''
         Arrête complètement les animations
         '''
-        if hasattr(self, 'animation1') and self.animation1:
-            if hasattr(self.animation1, 'event_source') and self.animation1.event_source:
-                self.animation1.event_source.stop()
+        try:
+            if self.animation1 is not None:
+                try:
+                    self.animation1.event_source.stop()
+                except:
+                    pass
+                self.animation1 = None
+        except:
             self.animation1 = None
         
-        if hasattr(self, 'animation2') and self.animation2:
-            if hasattr(self.animation2, 'event_source') and self.animation2.event_source:
-                self.animation2.event_source.stop()
+        try:
+            if self.animation2 is not None:
+                try:
+                    self.animation2.event_source.stop()
+                except:
+                    pass
+                self.animation2 = None
+        except:
             self.animation2 = None
     
     def animation_2D_démarrer(self, T, params, top=True):
@@ -400,7 +448,7 @@ class FenêtreAnimations:
             ax = self.ax_carte_2D_bottom
             canvas = self.canvas_carte_2D_bottom
             anim_attr = 'animation2'
-            cb_attr = 'bc_carte_2D_bottom'
+            cb_attr = 'bc_carte_3D_bottom'
             
         ax.clear()
         
@@ -409,14 +457,20 @@ class FenêtreAnimations:
         im = ax.imshow(temp_data, cmap='hot', interpolation='nearest', origin='lower')
         
         # Création ou mise à jour de la colorbar
-        if getattr(self, cb_attr) is not None:
-            try:
-                getattr(self, cb_attr).remove()  # Supprimer l'ancienne colorbar
-            except:
-                pass
-        
-        cb = fig.colorbar(im, ax=ax, label='Température (°C)')
-        setattr(self, cb_attr, cb)
+        if top:
+            if self.bc_carte_2D_top is not None:
+                try:
+                    self.bc_carte_2D_top.remove()  # Supprimer l'ancienne colorbar
+                except:
+                    pass
+            self.bc_carte_2D_top = fig.colorbar(im, ax=ax, label='Température (°C)')
+        else:
+            if self.bc_carte_2D_bottom is not None:
+                try:
+                    self.bc_carte_2D_bottom.remove()
+                except:
+                    pass
+            self.bc_carte_2D_bottom = fig.colorbar(im, ax=ax, label='Température (°C)')
         
         ax.set_title("Simulation Thermique 2D")
         ax.set_xlabel("Position X")
@@ -446,7 +500,14 @@ class FenêtreAnimations:
         def update(frame):
             # Vérifier si la simulation doit s'arrêter
             if not self.controlleur.simulation_run or self.controlleur.temps_courant >= params['temps_simulation']:
-                getattr(self, anim_attr).event_source.stop()
+                try:
+                    if top:
+                        self.animation1.event_source.stop()
+                    else:
+                        self.animation2.event_source.stop()
+                except:
+                    pass
+                    
                 if top:
                     self.controlleur.simulation_run = False
                     self.controlleur.status_var.set(f"Simulation terminée à {self.controlleur.temps_courant:.2f} s")
@@ -521,8 +582,11 @@ class FenêtreAnimations:
             return [im]
         
         # Créer l'animation
-        anim = FuncAnimation(fig, update, frames=None, interval=50, blit=True)
-        setattr(self, anim_attr, anim)
+        anim = FuncAnimation(fig, update, frames=None, interval=50, blit=True, cache_frame_data=False)
+        if top:
+            self.animation1 = anim
+        else:
+            self.animation2 = anim
 
     def animation_3D_démarrer(self, T, params, top=True):
         '''
@@ -532,14 +596,10 @@ class FenêtreAnimations:
             fig = self.fig_carte_3D_top
             ax = self.ax_carte_3D_top
             canvas = self.canvas_carte_3D_top
-            anim_attr = 'animation1'
-            cb_attr = 'bc_carte_3D_top'
         else:
             fig = self.fig_carte_3D_bottom
             ax = self.ax_carte_3D_bottom
             canvas = self.canvas_carte_3D_bottom
-            anim_attr = 'animation2'
-            cb_attr = 'bc_carte_3D_bottom'
             
         ax.clear()
         x = np.linspace(0, params['Lx'], params['n_x'])
@@ -553,12 +613,22 @@ class FenêtreAnimations:
         
         surf = ax.plot_surface(X, Y, Z, cmap='hot', vmin=vmin, vmax=vmax, rstride=2, cstride=2, linewidth=0, antialiased=False)
         
-        if getattr(self, cb_attr) is None:
-            cb = fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5, label='Température (°C)')
-            setattr(self, cb_attr, cb)
+        if top:
+            if self.bc_carte_3D_top is None:
+                self.bc_carte_3D_top = fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5, label='Température (°C)')
+            else:
+                try:
+                    self.bc_carte_3D_top.update_normal(surf)
+                except:
+                    self.bc_carte_3D_top = fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5, label='Température (°C)')
         else:
-            cb = getattr(self, cb_attr)
-            cb.update_normal(surf)
+            if self.bc_carte_3D_bottom is None:
+                self.bc_carte_3D_bottom = fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5, label='Température (°C)')
+            else:
+                try:
+                    self.bc_carte_3D_bottom.update_normal(surf)
+                except:
+                    self.bc_carte_3D_bottom = fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5, label='Température (°C)')
         
         ax.set_title("Simulation Thermique 3D")
         ax.set_xlabel("Position X (m)")
@@ -568,7 +638,14 @@ class FenêtreAnimations:
         
         def update(frame):
             if not self.controlleur.simulation_run or self.controlleur.temps_courant >= params['temps_simulation']:
-                getattr(self, anim_attr).event_source.stop()
+                try:
+                    if top:
+                        self.animation1.event_source.stop()
+                    else:
+                        self.animation2.event_source.stop()
+                except:
+                    pass
+                    
                 if top:
                     self.controlleur.simulation_run = False
                     self.controlleur.status_var.set(f"Simulation terminée à {self.controlleur.temps_courant:.2f} s")
@@ -631,11 +708,24 @@ class FenêtreAnimations:
             ax.set_xlabel("Position X (m)")
             ax.set_ylabel("Position Y (m)")
             ax.set_zlabel("Température (°C)")
-            cb = getattr(self, cb_attr)
-            cb.update_normal(surf)
+            
+            if top:
+                try:
+                    self.bc_carte_3D_top.update_normal(surf)
+                except:
+                    pass
+            else:
+                try:
+                    self.bc_carte_3D_bottom.update_normal(surf)
+                except:
+                    pass
+                    
             return surf
         
         # Créer l'animation
-        anim = FuncAnimation(fig, update, frames=None, interval=50, blit=False)
-        setattr(self, anim_attr, anim)
+        anim = FuncAnimation(fig, update, frames=None, interval=50, blit=False, cache_frame_data=False)
+        if top:
+            self.animation1 = anim
+        else:
+            self.animation2 = anim
         canvas.draw()
