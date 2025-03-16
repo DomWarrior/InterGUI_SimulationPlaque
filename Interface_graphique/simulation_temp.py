@@ -105,9 +105,9 @@ class TempératurePlaque:
         if P_pert is not None and temps_actuel >= t_pert:
             k, l = pos_pert
             k_min = max(0, k - nx_pert//2)
-            k_max = min(T.shape[0], k + nx_pert//2)
+            k_max = min(T.shape[0], k + nx_pert//2+1)
             l_min = max(0, l - ny_pert//2)
-            l_max = min(T.shape[1], l + ny_pert//2)
+            l_max = min(T.shape[1], l + ny_pert//2+1)
             
             n_elements = (k_max - k_min) * (l_max - l_min)
             if n_elements > 0:

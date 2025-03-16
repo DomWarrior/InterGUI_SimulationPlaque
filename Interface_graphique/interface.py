@@ -63,7 +63,7 @@ class FenêtreInterface:
         self.initialisation_donnees_simulation()    #instance qui va initialise les données de la simulation
         self.creer_variables()                      #instance qui va créer les variables
         self.creer_interface()                      #instance qui va créer l'interface
-        self.charger_params("paramètres_simulation.json")  #instance qui va charger les paramètres depuis un fichier json
+        
 
 
     def initialisation_donnees_simulation(self):
@@ -117,7 +117,7 @@ class FenêtreInterface:
         self.var_ny_ac = tk.IntVar(value=15)                    # Dimension horizontale en nombre d'éléments de matrice de l'actuateur (1 élément = 1mm)
         self.var_P_pert = tk.DoubleVar(value=0)                 #Puissance thermique de la perturbation
         self.var_t_pert = tk.DoubleVar(value=0)                 #temps à lequel on veut appliquer la perturbation
-        self.var_pos_pert_x = tk.IntVar(value=60)               #position horizontale du centre de la perturbation par rapport au bord supérieur de la plaque (vue du dessus)
+        self.var_pos_pert_x = tk.IntVar(value=30)               #position horizontale du centre de la perturbation par rapport au bord supérieur de la plaque (vue du dessus)
         self.var_pos_pert_y = tk.IntVar(value=60)               #position horizontale du centre de la perturbation par rapport au bord gauche de la plaque (vue du dessus)
         self.var_nx_pert = tk.IntVar(value=5)                   # Dimension verticale en nombre d'éléments de matrice de la perturbation (1 élément = 1mm)
         self.var_ny_pert = tk.IntVar(value=5)                   # Dimension verticale en nombre d'éléments de matrice de la perturbation (1 élément = 1mm)
@@ -130,8 +130,6 @@ class FenêtreInterface:
         # Autres variables 
         self.var_afficher_actuateur = tk.BooleanVar(value=True)     #variable qui va permet à l'utilisateur d'afficher oui ou non l'actuateur sur l'animation 2D
         self.var_afficher_perturbation = tk.BooleanVar(value=True)  #variable qui va permet à l'utilisateur d'afficher oui ou non la perturbation sur l'animation 2D
-        self.var_temperature_min = tk.DoubleVar(value=20)
-        self.var_temperature_max = tk.DoubleVar(value=40)
         self.var_vitesse_animation = tk.DoubleVar(value=1.0)        #variable qui va stocker la vitesse d'animation
         self.graphique_top_select = tk.StringVar(value="Carte Thermique 2D")    # variable qui va stocker le graphique sélectionné par l'utilisateur pour la sous-figure du dessus
         self.graphique_bottom_selcet = tk.StringVar(value="Évolution Température")  # variable qui va stocker le graphique sélectionné par l'utilisateur pour la sous-figure du dessous
@@ -378,23 +376,10 @@ class FenêtreInterface:
 
 
 
-
-        #À revoir pour cela aussi 
         
-        ttk.Label(frame, text="Température min (°C):").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_temperature_min, width=10).grid(row=2, column=1, padx=5, pady=2)
-        
-        ttk.Label(frame, text="Température max (°C):").grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_temperature_max, width=10).grid(row=3, column=1, padx=5, pady=2)
         
         frame = ttk.Frame(self.page_simulation)
         frame.pack(fill=tk.X, padx=10, pady=5)
-
-
-
-
-
-
 
         #Ici, au lieu de créer des frames (widgets) on crée des boutons avec lesquels l'utilisateur peut intéragir avec.
 
@@ -766,11 +751,12 @@ class FenêtreInterface:
                 },
                 "discretisation" :{
                     "n_x": self.var_n_x.get(),
-                    "n_y": self.var_n_y
+                    "n_y": self.var_n_y.get()
                 },
                 "simulation":{
                     "temps_simulation": self.var_temps_simulation.get(),
                     "P_ac": self.var_P_ac.get(),
+                    "t_ac": self.var_t_ac.get(),
                     "pos_ac": [self.var_pos_ac_x.get(),self.var_pos_ac_y.get()],
                     "nx_ac": self.var_nx_ac.get(),
                     "ny_ac": self.var_ny_ac.get(),

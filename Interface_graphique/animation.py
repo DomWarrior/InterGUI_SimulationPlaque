@@ -479,13 +479,13 @@ class FenêtreAnimations:
         # Dessiner l'actuateur et la perturbation si activés
         if self.controlleur.var_afficher_actuateur.get():
             i, j = params['pos_ac']
-            nx, ny = params['nx_ac'], params['ny_ac']
+            nx, ny = params['nx_ac']-1, params['ny_ac']-1
             rect = plt.Rectangle((j - ny//2, i - nx//2), ny, nx, edgecolor='lime', facecolor='none', linewidth=2)
             ax.add_patch(rect)
             
         if self.controlleur.var_afficher_perturbation.get() and params['P_pert'] > 0:
             k, l = params['pos_pert']
-            nx, ny = params['nx_pert'], params['ny_pert']
+            nx, ny = params['nx_pert']-1, params['ny_pert']-1
             rect = plt.Rectangle((l - ny//2, k - nx//2), ny, nx, edgecolor='cyan', facecolor='none', linewidth=2)
             ax.add_patch(rect)
         
