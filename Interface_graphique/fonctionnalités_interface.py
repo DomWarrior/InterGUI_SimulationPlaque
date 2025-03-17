@@ -35,9 +35,9 @@ def sauvegarder_résultats_txt(fichier, times, temp1, temp2, temp_laser, energy)
         for time, t1, t2, tl, e in zip(times, temp1, temp2, temp_laser, energy):  # Ensuite on boucle sur les éléments des listes (times, temps 1...) et on rajoute/écrit ligne par ligne
             line = (
                 f"{round(time,6):<15}"
-                f"{t1:<30}"
-                f"{t2:<30}"
-                f"{tl:<20}"
-                f"{e:<20}\n"
+                f"{round(t1,6):<30}"
+                f"{round(t2,6):<30}"
+                f"{round(tl,6):<20}"
+                f"{round(e,6):<20}\n"
             )
             file.write(line)
