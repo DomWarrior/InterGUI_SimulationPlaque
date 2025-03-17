@@ -510,7 +510,6 @@ class FenêtreAnimations:
                     
                 if top:
                     self.controlleur.simulation_run = False
-                    self.controlleur.status_var.set(f"Simulation terminée à {self.controlleur.temps_courant:.2f} s")
                     self.update_graph_temp(True)
                     self.update_graph_temp(False)
                     self.update_graph_energie(True)
@@ -560,9 +559,6 @@ class FenêtreAnimations:
                     self.update_graph_temp(False)
                 elif self.controlleur.graphique_bottom_selcet.get() == "Énergie Interne":
                     self.update_graph_energie(False)
-                
-                # Mettre à jour le statut
-                self.controlleur.status_var.set(f"Simulation en cours... Temps: {self.controlleur.temps_courant:.2f} s / {params['temps_simulation']:.2f} s")
             
             # Mettre à jour l'image avec la nouvelle matrice de température
             temp_data = self.controlleur.T - 273.15
@@ -648,7 +644,6 @@ class FenêtreAnimations:
                     
                 if top:
                     self.controlleur.simulation_run = False
-                    self.controlleur.status_var.set(f"Simulation terminée à {self.controlleur.temps_courant:.2f} s")
                     self.update_graph_temp(True)
                     self.update_graph_temp(False)
                     self.update_graph_energie(True)
@@ -694,7 +689,7 @@ class FenêtreAnimations:
                 elif self.controlleur.graphique_bottom_selcet.get() == "Énergie Interne":
                     self.update_graph_energie(False)
                 
-                self.controlleur.status_var.set(f"Simulation en cours... Temps: {self.controlleur.temps_courant:.2f} s / {params['temps_simulation']:.2f} s")
+                
             
             ax.clear()
             Z = self.controlleur.T.T - 273.15

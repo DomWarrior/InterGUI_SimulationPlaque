@@ -1,7 +1,18 @@
-"""
-Ce fichier contient le code de l'interface utilisateur .... fenêtre de gauche...
 
-"""
+#https://docs.python.org/3/library/tkinter.messagebox.html       #Documentation pour messagox
+#https://docs.python.org/3/library/tkinter.ttk.html              #Documentation pour les wigets ttk
+#https://docs.python.org/3/library/tkinter.ttk.html#notebook     #Documentation pour Notebook
+#https://stackoverflow.com/questions/28089942/difference-between-fill-and-expand-options-for-tkinter-pack-method     #Documentation pour la position des éléments
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -22,16 +33,45 @@ from animation import FenêtreAnimations
 from fonctionnalités_interface import sauvegarder_paramètres_json, charger_paramètres_json, sauvegarder_résultats_txt
 import numpy as np
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class FenêtreInterface:
     '''
     Cette classe gérer l'interface graphique avec laquelle l'utilisateur va être en mesure d'intéragir afin de contrôleur les paramètres,
     les graphiques et les animations de la simulation de la température dans la plaque....
     '''
 
+
+
+
+
+
+
+
     def __init__(self, f_interface):
         self.f_interface = f_interface      #création d'une instance qui va représenter la fenêtre principale de l'interface (widget)
         self.f_interface.title("Simulation Thermique de la plaque")     #Titre de la fenêtre Tkinter                                                        
-        self.f_interface.geometry("1280x720")      #Taille initiale de la fenêtre lorsque l'utilisateur va lancer le code
+        self.f_interface.geometry("1280x800")      #Taille initiale de la fenêtre lorsque l'utilisateur va lancer le code
 
 
         self.simulation_thermique = TempératurePlaque()   # on crée une instance qui va contenir la fonction qui modélise l'évolution de la température dans la plaque présent dans le fichier simulation.py 
@@ -40,9 +80,9 @@ class FenêtreInterface:
         self.style = ttk.Style()                      #permet d'accéder aux thèmes disponibles et qui va permettre de configurer le style de la fenêtre
         self.style.theme_use('clam')                    # thème choisi
 
-        couleur_fond = "#f5f5f5"                        #couleur de fond de la fenêtre
+        couleur_fond = "#f5f5f5"                        #couleur de fond de la fenêtre  "#f5f5f5"       #
         couleur_entete = "#e0e0e0"                      #couleur des en-têtes
-        couleur_cadre = "#f0f0f0"                       #couleur du cadre de la fenêtre
+        couleur_cadre = "#e0e0e0"                       #couleur du cadre de la fenêtre
 
 
         #configuration de l'interface
@@ -63,7 +103,15 @@ class FenêtreInterface:
         self.initialisation_donnees_simulation()    #instance qui va initialise les données de la simulation
         self.creer_variables()                      #instance qui va créer les variables
         self.creer_interface()                      #instance qui va créer l'interface
-        
+
+
+
+
+
+
+
+
+
 
 
     def initialisation_donnees_simulation(self):
@@ -83,6 +131,15 @@ class FenêtreInterface:
         self.anim2 = None               #même chose, mais pour celle du bas
         self.T = None                   #Matrice de la température dans la plaque
 
+
+
+
+
+
+
+
+
+
     def creer_variables(self):
         '''
         Cette fonction va créer et convertir tous les paramètres initiale du simulateur en variable tkinker afin de pourvoir les utiliser par l'interface Tkinter. 
@@ -101,7 +158,7 @@ class FenêtreInterface:
         
         # Proprités thermique de l'air ambiant
         self.var_T_air = tk.DoubleVar(value=297.47) #température de l'air
-        self.var_h = tk.DoubleVar(value=10)         #coefficient de convection entre l'air et la plaque
+        self.var_h = tk.DoubleVar(value=12.2)         #coefficient de convection entre l'air et la plaque
         
         # Discrétisation
         self.var_n_x = tk.IntVar(value=61)          #pas en x
@@ -131,9 +188,15 @@ class FenêtreInterface:
         self.var_afficher_actuateur = tk.BooleanVar(value=True)     #variable qui va permet à l'utilisateur d'afficher oui ou non l'actuateur sur l'animation 2D
         self.var_afficher_perturbation = tk.BooleanVar(value=True)  #variable qui va permet à l'utilisateur d'afficher oui ou non la perturbation sur l'animation 2D
         self.var_vitesse_animation = tk.DoubleVar(value=1.0)        #variable qui va stocker la vitesse d'animation
-        self.graphique_top_select = tk.StringVar(value="Carte Thermique 2D")    # variable qui va stocker le graphique sélectionné par l'utilisateur pour la sous-figure du dessus
-        self.graphique_bottom_selcet = tk.StringVar(value="Évolution Température")  # variable qui va stocker le graphique sélectionné par l'utilisateur pour la sous-figure du dessous
-        self.status_var = tk.StringVar(value="Prêt pour la simulation")
+        self.graphique_top_select = tk.StringVar(value="Carte Thermique 2D")    # variable qui va stocker le graphique sélectionné par l'utilisateur pour la sous-figure du dessus. Par défaut, ça va être le graphique 2D
+        self.graphique_bottom_selcet = tk.StringVar(value="Évolution Température")  # variable qui va stocker le graphique sélectionné par l'utilisateur pour la sous-figure du dessous. Par defaut, ¸ça va être l'évolution de la température
+        
+
+
+
+
+
+
 
 
     def creer_interface(self):
@@ -141,19 +204,27 @@ class FenêtreInterface:
         Cette fonction va créer l'entièreté de l'interface qui va contenir le panneau de contrôle et le panneau de visualisation
         '''
 
-        fenêtre_interface = ttk.PanedWindow(self.f_interface, orient=tk.HORIZONTAL) # ici on crée la fenêtre à partir de l'instance f_interface et elle sera divisée en 2 horizontalement
-        fenêtre_interface.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        fenêtre_interface = ttk.PanedWindow(self.f_interface, orient=tk.HORIZONTAL) # ici on crée la fenêtre à partir de l'instance f_interface et la division sera fait à l'horizontale
+        fenêtre_interface.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)    # padx et pady défini la séparation entre le cadre de la fenêtre et le contenu
 
 
         self.panneau_controle = ttk.Frame(fenêtre_interface)      #Création du panneau de contrôle à partir de la fenêtre interface
-        fenêtre_interface.add(self.panneau_controle, weight=35)  # On défini le panneau de contrôle comme étant 35% du poids/taille horizontale de la fenêtre interface 
+        fenêtre_interface.add(self.panneau_controle, weight=30)  # On défini le panneau de contrôle comme étant 35% du poids/taille horizontale de la fenêtre interface. En réalité , on rajoute une fenêtre par dessus fenêtre_interface
 
         self.panneau_visu = ttk.Frame(fenêtre_interface)      #Création du panneau visualisation des animations à partir de la fenêtre interface
-        fenêtre_interface.add(self.panneau_visu, weight=65)  # On défini le panneau de contrôle comme étant 65% du poids/taille horizontale de la fenêtre interface 
+        fenêtre_interface.add(self.panneau_visu, weight=70)  # On défini le panneau de contrôle comme étant 65% du poids/taille horizontale de la fenêtre interface 
 
 
         self.creer_panneau_de_controle()        # Ici on fait appel à la fonction creer_panneau_de_controle définie plus loin dans la classe pour créer le panneau de contrôle
-        self.panneau_visualisation = FenêtreAnimations(self.panneau_visu, self)      #Ici on fait appel à la fonction creer_panneau_visualisation dans la classe du fichier visualisation  pour créer le panneau de visualisation
+        self.panneau_visualisation = FenêtreAnimations(self.panneau_visu, self)      #Ici on défini le panneau de visualisation comme un objet appartenant à la Classe FenêtreAnimation
+
+
+
+
+
+
+
+
 
     def creer_panneau_de_controle(self):
         '''
@@ -184,18 +255,18 @@ class FenêtreInterface:
         self.creation_page_actuateur()
         self.creation_page_simulation()
 
+
+
+
+
+
+
+
+
     def creation_page_parametres_physiques(self):
-
-
-
-
         '''
         Cette fonction crée la mise en forme de la page Paramètres Physiques (encadrés pour mettre les valeurs, boutons, ...)
         '''
-
-
-
-
 
 
         self.creation_frame(self.page_params_physiques, "Propriétés thermiques de la plaque") #création d'une en-tête dans la page params_physique. 
@@ -243,6 +314,12 @@ class FenêtreInterface:
 
 
 
+
+
+
+
+
+
     
     def creation_page_dimensions(self):
         '''
@@ -274,6 +351,16 @@ class FenêtreInterface:
         
         ttk.Label(frame, text="Nombre de points en y (n_y):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_n_y, width=10).grid(row=1, column=1, padx=5, pady=2)
+
+
+
+
+
+
+
+
+
+
 
     def creation_page_actuateur(self):
         '''
@@ -330,6 +417,17 @@ class FenêtreInterface:
         ttk.Label(frame, text="Taille Y:").grid(row=5, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_ny_pert, width=10).grid(row=5, column=1, padx=5, pady=2)
 
+
+
+
+
+
+
+
+
+
+
+
     def creation_page_simulation(self):
         '''
         .....
@@ -346,18 +444,13 @@ class FenêtreInterface:
         
         ttk.Label(frame, text="Vitesse de simulation:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
 
-
-
-
-
-        # à revoir pour cela
         
 
-        # Créer un frame pour contenir les contrôles de vitesse
+        
         speed_frame = ttk.Frame(frame)
         speed_frame.grid(row=1, column=1, padx=5, pady=2, sticky=tk.W)
 
-        # Entrée numérique pour le facteur de vitesse
+        
         speed_entry = ttk.Entry(speed_frame, textvariable=self.var_vitesse_animation, width=5)
         speed_entry.pack(side=tk.LEFT, padx=2)
 
@@ -368,15 +461,13 @@ class FenêtreInterface:
         speeds_frame = ttk.Frame(frame)
         speeds_frame.grid(row=1, column=2, padx=5, pady=2, sticky=tk.W)
 
+
         for speed in [0.25, 0.5, 1.0, 2.0, 5.0, 10.0]:
             btn = ttk.Button(speeds_frame, text=f"{speed}x", 
                     command=lambda s=speed: self.var_vitesse_animation.set(s), 
                     width=4)
             btn.pack(side=tk.LEFT, padx=2)
 
-
-
-        
         
         frame = ttk.Frame(self.page_simulation)
         frame.pack(fill=tk.X, padx=10, pady=5)
@@ -390,9 +481,6 @@ class FenêtreInterface:
         ttk.Checkbutton(frame, text="Afficher la perturbation", variable=self.var_afficher_perturbation).grid(
             row=1, column=0, sticky=tk.W, padx=5, pady=2)
         
-
-
-
 
 
 
@@ -453,15 +541,25 @@ class FenêtreInterface:
 
 
 
+
+
+
+
+
     def creation_frame(self, page, text):
 
         '''
-        Cette fonction, lorsqu'elle sera appelée, va générer une en-tête (frame) dans la  page d'intérêt où les widgets pourront y être inséré
+        Cette fonction, lorsqu'elle sera appelée, va générer un ''onglet'' (frame) dans la  page d'intérêt où les widgets pourront y être inséré
         '''
 
         frame = ttk.Frame(page, style='EnTete.TFrame')
-        frame.pack(fill=tk.X, pady=(5,0))
+        frame.pack(fill=tk.X, pady=(5,0))                   
         ttk.Label(frame, text=text, style='EnTete.TLabel').pack(anchor=tk.W, padx=5, pady=3)
+
+
+
+
+
 
 
  
@@ -536,6 +634,13 @@ class FenêtreInterface:
         
 
 
+
+
+
+
+
+
+
     def lancer_simulation(self):
         '''
         Cette fonction va s'occuper de démarrer la simulation 
@@ -564,12 +669,16 @@ class FenêtreInterface:
         self.T = np.ones((params['n_x'], params['n_y'])) * params["T_plaque"]
 
 
-
-        #On démarre la simulation
         self.simulation_run = True          # On passe l'état de simulation_run de False à True pour indiquer qu'on veut commencer la simulation
 
         # En passant à l'état :True , on peut appeler la fonction dans le fichier animation.py qui s'occupe de lancer la simulation en mettant les paramètres.
         self.panneau_visualisation.lancer_animations(self.T, params, self.graphique_top_select.get(), self.graphique_bottom_selcet.get())
+        #self.graphique_top_select.get() et self.graphique_bottom_selcet.get()
+
+
+
+
+
 
 
 
@@ -595,6 +704,13 @@ class FenêtreInterface:
 
 
 
+
+
+
+
+
+
+
     def stop_simulation(self):
         '''
         Cette fonction permet de mettre d'arrêter la simulation en cours s'il y a effectivement un simulation en cours, 
@@ -609,6 +725,16 @@ class FenêtreInterface:
             self.simulation_paused = False
         else:
             messagebox.showinfo('Information', 'Aucune simulation en cours')
+
+
+
+
+
+
+
+
+
+
 
 
     def reset_simulation(self):
@@ -628,13 +754,18 @@ class FenêtreInterface:
         self.compter_frame = 0 
         params = self.recup_params_sim()
         self.T = np.ones((params['n_x'], params['n_y'])) * params["T_plaque"]
-    
-    # Réinitialiser les états
-        self.simulation_paused = False
-        self.panneau_visualisation.reset_graphiques()
+
+        self.simulation_paused = False                      
+        self.panneau_visualisation.reset_graphiques()           #On réinitialise les graphiques
 
        
-        
+
+
+
+
+
+
+
 
     def Windows_charger_params(self):
         '''
@@ -646,6 +777,14 @@ class FenêtreInterface:
 
         if fichier :
             self.charger_params(fichier)
+
+
+
+
+
+
+
+
 
 
     def charger_params(self, fichier=None):        
@@ -715,6 +854,11 @@ class FenêtreInterface:
 
 
 
+
+
+
+
+
     def Windows_sauvegarder_params(self):
         '''
         cette fonction permet d'ouvrir une fenêtre dans laquelle l'utilisateur pourra sauvegarder des fichers json contenant les paramètres de la simulation.
@@ -726,6 +870,15 @@ class FenêtreInterface:
 
         if fichier :
             self.sauvegarde_params(fichier)
+
+
+
+
+
+
+
+
+
 
     def sauvegarde_params(self, ficher=None):
         '''
@@ -775,6 +928,14 @@ class FenêtreInterface:
         except Exception as erreur:
             messagebox.showerror("Erreur", f"Impossible de sauvegarder les paramètres : {str(erreur)}")
 
+
+
+
+
+
+
+
+
     def sauvegarder_resultats(self, fichier=None):
         '''
         Cette fonction s'occupe d'enregistrer les résultats (réponses en températures des thermistances) dans un fichier .txt
@@ -785,7 +946,7 @@ class FenêtreInterface:
             messagebox.showinfo("Information", "Aucune donnée de simulation en mémoire")
         
         if fichier is None:
-            fichier = filedialog.asksaveasfilename(title='Sauvegarder les résultats', filetypes=[("Fichier TXT", "*txt"), ("Tous les fichiers, *.*")],
+            fichier = filedialog.asksaveasfilename(title='Sauvegarder les résultats', filetypes=[("Fichier TXT", "*.txt"), ("Tous les fichiers", "*.*")],
                                                    defaultextension=".txt",
                                                    initialfile="Données_température_thermistance")
         if not fichier:
