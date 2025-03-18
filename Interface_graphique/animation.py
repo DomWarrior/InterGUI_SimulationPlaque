@@ -423,6 +423,17 @@ class FenêtreAnimations:
         '''
         Démarre l'animation de la carte thermique 2D
         '''
+
+
+
+        pos_t1x = self.controlleur.var_pos_therm1x.get() 
+        pos_t1y = self.controlleur.var_pos_therm1y.get() 
+        pos_t2x =   self.controlleur.var_pos_therm2x.get() 
+        pos_t2y = self.controlleur.var_pos_therm2y.get() 
+        pos_t3x = self.controlleur.var_pos_therm3x.get() 
+        pos_t3y = self.controlleur.var_pos_therm3y.get() 
+
+
         if top:
             fig = self.fig_carte_2D_top
             ax = self.ax_carte_2D_top
@@ -482,9 +493,9 @@ class FenêtreAnimations:
             ax.add_patch(rect)
         
         # Ajouter les points des thermistances
-        ax.plot(15, 30, 'ro', markersize=5, label="Thermistance 1")
-        ax.plot(60, 30, 'go', markersize=5, label="Thermistance 2")
-        ax.plot(105, 30, 'bo', markersize=5, label="Thermistance Laser")
+        ax.plot(pos_t1y, pos_t1x, 'ro', markersize=5, label="Thermistance 1")
+        ax.plot(pos_t2y, pos_t2x, 'go', markersize=5, label="Thermistance 2")
+        ax.plot(pos_t3y, pos_t3x, 'bo', markersize=5, label="Thermistance Laser")
         ax.legend(loc='upper right')
         
         canvas.draw()
@@ -526,9 +537,9 @@ class FenêtreAnimations:
                         self.controlleur.T, params_actuels)
                     
                     
-                    temp1 = self.controlleur.T[30, 15] - 273.15
-                    temp2 = self.controlleur.T[30, 60] - 273.15
-                    temp_laser = self.controlleur.T[30, 105] - 273.15
+                    temp1 = self.controlleur.T[pos_t1x, pos_t1y] - 273.15
+                    temp2 = self.controlleur.T[pos_t2x, pos_t2y] - 273.15
+                    temp_laser = self.controlleur.T[pos_t3x, pos_t3y] - 273.15
                     
                     self.controlleur.temp_therm_1.append(temp1)
                     self.controlleur.temp_therm_2.append(temp2)
@@ -583,6 +594,14 @@ class FenêtreAnimations:
         '''
         Démarre l'animation de la carte thermique 3D
         '''
+
+        pos_t1x = self.controlleur.var_pos_therm1x.get() 
+        pos_t1y = self.controlleur.var_pos_therm1y.get() 
+        pos_t2x = self.controlleur.var_pos_therm2x.get() 
+        pos_t2y = self.controlleur.var_pos_therm2y.get() 
+        pos_t3x = self.controlleur.var_pos_therm3x.get() 
+        pos_t3y = self.controlleur.var_pos_therm3y.get()
+
         if top:
             fig = self.fig_carte_3D_top
             ax = self.ax_carte_3D_top
@@ -653,9 +672,9 @@ class FenêtreAnimations:
                     self.controlleur.T = self.controlleur.simulation_thermique.vector_evolution_temperature(
                         self.controlleur.T, params_actuels)
                     
-                    temp1 = self.controlleur.T[30, 15] - 273.15
-                    temp2 = self.controlleur.T[30, 60] - 273.15
-                    temp_laser = self.controlleur.T[30, 105] - 273.15
+                    temp1 = self.controlleur.T[pos_t1x, pos_t1y] - 273.15
+                    temp2 = self.controlleur.T[pos_t2x, pos_t2y] - 273.15
+                    temp_laser = self.controlleur.T[pos_t3x, pos_t3y] - 273.15
                     
                     self.controlleur.temp_therm_1.append(temp1)
                     self.controlleur.temp_therm_2.append(temp2)

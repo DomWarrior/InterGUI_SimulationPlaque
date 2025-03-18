@@ -178,8 +178,12 @@ class FenêtreInterface:
         self.var_pos_pert_y = tk.IntVar(value=60)               #position horizontale du centre de la perturbation par rapport au bord gauche de la plaque (vue du dessus)
         self.var_nx_pert = tk.IntVar(value=5)                   # Dimension verticale en nombre d'éléments de matrice de la perturbation (1 élément = 1mm)
         self.var_ny_pert = tk.IntVar(value=5)                   # Dimension verticale en nombre d'éléments de matrice de la perturbation (1 élément = 1mm)
-        
-
+        self.var_pos_therm1x = tk.IntVar(value=30)
+        self.var_pos_therm1y = tk.IntVar(value=15)
+        self.var_pos_therm2x = tk.IntVar(value=30)
+        self.var_pos_therm2y = tk.IntVar(value=60)
+        self.var_pos_therm3x = tk.IntVar(value=30)
+        self.var_pos_therm3y = tk.IntVar(value=105)
 
         self.var_couplage = tk.DoubleVar(value=1.0)              # variable représentant le couplage thermique entre l'actuateur et la plaque
 
@@ -368,7 +372,7 @@ class FenêtreInterface:
 
         '''
 
-        self.creation_frame(self.page_actuation, "Actuateur thermoélectrique")
+        self.creation_frame(self.page_actuation, "Actuateur thermoélectrique et Thermistances")
         
         frame = ttk.Frame(self.page_actuation)
         frame.pack(fill=tk.X, padx=10, pady=5)
@@ -416,6 +420,29 @@ class FenêtreInterface:
         
         ttk.Label(frame, text="Taille Y:").grid(row=5, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_ny_pert, width=10).grid(row=5, column=1, padx=5, pady=2)
+
+        self.creation_frame(self.page_actuation, "Position thermistances")
+        
+        frame = ttk.Frame(self.page_actuation)
+        frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        ttk.Label(frame, text="Position x thermistance 1 :").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_pos_therm1x, width=10).grid(row=0, column=1, padx=5, pady=2)
+
+        ttk.Label(frame, text="Position y thermistance 1 :").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_pos_therm1y, width=10).grid(row=1, column=1, padx=5, pady=2)
+
+        ttk.Label(frame, text="Position x thermistance 2 :").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_pos_therm2x, width=10).grid(row=2, column=1, padx=5, pady=2)
+        
+        ttk.Label(frame, text="Position y thermistance 2 :").grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_pos_therm2y, width=10).grid(row=3, column=1, padx=5, pady=2)
+        
+        ttk.Label(frame, text="Position x thermistance 3 :").grid(row=4, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_pos_therm3x, width=10).grid(row=4, column=1, padx=5, pady=2)
+        
+        ttk.Label(frame, text="Position y thermistance 3 :").grid(row=5, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_pos_therm3y, width=10).grid(row=5, column=1, padx=5, pady=2)
 
 
 
@@ -597,6 +624,16 @@ class FenêtreInterface:
         ny_pert = self.var_ny_pert.get()
         couplage = self.var_couplage.get()
 
+        pos_therm1x = self.var_pos_therm1x.get()
+        pos_therm1y = self.var_pos_therm1y.get()
+        pos_therm2x = self.var_pos_therm2x.get()
+        pos_therm2y = self.var_pos_therm2y.get()
+        pos_therm3x = self.var_pos_therm3x.get()
+        pos_therm3y = self.var_pos_therm3y.get()
+        
+
+
+
         t_ac = self.var_t_ac.get()
         t_pert = self.var_t_pert.get()
         
@@ -629,7 +666,10 @@ class FenêtreInterface:
             'P_pert': P_pert, 'pos_pert': pos_pert, 'nx_pert': nx_pert, 'ny_pert': ny_pert,
             'dx': dx, 'dy': dy, 'dz': dz, 'vol': vol,
             'a': a, 'dt': dt, 'Nt': Nt, 'couplage':couplage,
-            't_ac': t_ac, 't_pert': t_pert 
+            't_ac': t_ac, 't_pert': t_pert ,
+            'pos_therm1x': pos_therm1x, 'pos_therm1y': pos_therm1y,
+            'pos_therm2x': pos_therm2x,'pos_therm2y': pos_therm2y,
+            'pos_therm3x': pos_therm3x,'pos_therm3y': pos_therm3y,
         }
         
 
@@ -825,7 +865,7 @@ class FenêtreInterface:
             self.var_n_y.set(params["discretisation"]["n_y"])
 
 
-            # Simulation
+            # Simulation, Actuateur et perturbation
             self.var_temps_simulation.set(params["simulation"]["temps_simulation"])
             self.var_P_ac.set(params["simulation"]["P_ac"])
             self.var_t_ac.set(params["simulation"]["t_ac"])
@@ -840,13 +880,19 @@ class FenêtreInterface:
             self.var_nx_pert.set(params["simulation"]["nx_pert"])
             self.var_ny_pert.set(params["simulation"]["ny_pert"])
             self.var_couplage.set(params["simulation"]["couplage"])
+
+
+            #Thermistances 
+
+            self.var_pos_therm1x.set(params["Thermistances"]["pos_therm1x"])
+            self.var_pos_therm1y.set(params["Thermistances"]["pos_therm1y"])
+            self.var_pos_therm2x.set(params["Thermistances"]["pos_therm2x"])
+            self.var_pos_therm2y.set(params["Thermistances"]["pos_therm2y"])
+            self.var_pos_therm3x.set(params["Thermistances"]["pos_therm3x"])
+            self.var_pos_therm3y.set(params["Thermistances"]["pos_therm3y"])
+
             
-            # Vous pourriez également vouloir mettre à jour d'autres paramètres comme:
-            # self.var_temperature_min.set(...)
-            # self.var_temperature_max.set(...)
-            # self.var_show_actuator.set(...)
-            # self.var_show_perturbation.set(...)
-            # self.var_speed_factor.set(...)
+            
             
         except Exception as erreur:
             messagebox.showerror("Erreur", f"Impossible de charger les paramètres: {str(erreur)}")
@@ -919,6 +965,15 @@ class FenêtreInterface:
                     "nx_pert": self.var_nx_pert.get(),
                     "ny_pert": self.var_ny_pert.get(),
                     "couplage": self.var_couplage.get(),
+
+                },
+                "Thermistances": {
+                    "pos_therm1x" : self.var_pos_therm1x.get(),
+                    "pos_therm1y" : self.var_pos_therm1y.get(),
+                    "pos_therm2x" : self.var_pos_therm2x.get(),
+                    "pos_therm2y" : self.var_pos_therm2y.get(),
+                    "pos_therm3x" : self.var_pos_therm3x.get(),
+                    "pos_therm3y" : self.var_pos_therm3y.get(),
 
                 }
             }
