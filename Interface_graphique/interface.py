@@ -32,7 +32,7 @@ from simulation_temp import TempératurePlaque                                  
 from animation import FenêtreAnimations
 from fonctionnalités_interface import sauvegarder_paramètres_json, charger_paramètres_json, sauvegarder_résultats_txt
 import numpy as np
-
+import time
 
 
 
@@ -149,7 +149,8 @@ class FenêtreInterface:
         self.var_k = tk.IntVar(value=167)           #conductivité thermique du matériau
         self.var_p = tk.IntVar(value=2700)          #densité du matériau
         self.var_cp = tk.IntVar(value=900)          #capacité thermique du matériau
-        self.var_T_plaque = tk.DoubleVar(value=297.47)  #température initiale de la plaque 
+        self.var_T_plaque = tk.DoubleVar(value=25)  #température initiale de la plaque 
+        
         
         # Dimensions plaque
         self.var_Lx = tk.DoubleVar(value=0.061)     #Largeur de la plaque (x)
@@ -157,7 +158,7 @@ class FenêtreInterface:
         self.var_e = tk.DoubleVar(value=0.00165)    #épaisseur de la plaque
         
         # Proprités thermique de l'air ambiant
-        self.var_T_air = tk.DoubleVar(value=297.47) #température de l'air
+        self.var_T_air = tk.DoubleVar(value=25) #température de l'air
         self.var_h = tk.DoubleVar(value=12.2)         #coefficient de convection entre l'air et la plaque
         
         # Discrétisation
@@ -165,6 +166,7 @@ class FenêtreInterface:
         self.var_n_y = tk.IntVar(value=117)         #pas en y
         
         # Simulation
+        self.var_current = tk.DoubleVar(value=1)
         self.var_temps_simulation = tk.DoubleVar(value=500)     #temps total de la simulation
         self.var_P_ac = tk.DoubleVar(value=1.0)                 #Puissance électrique injectée dans l'actuateur
         self.var_t_ac = tk.DoubleVar(value=0)                   #temps à lequel on veut appliquer la puissance de l'actuateur 
@@ -175,9 +177,9 @@ class FenêtreInterface:
         self.var_P_pert = tk.DoubleVar(value=0)                 #Puissance thermique de la perturbation
         self.var_t_pert = tk.DoubleVar(value=0)                 #temps à lequel on veut appliquer la perturbation
         self.var_pos_pert_x = tk.IntVar(value=30)               #position horizontale du centre de la perturbation par rapport au bord supérieur de la plaque (vue du dessus)
-        self.var_pos_pert_y = tk.IntVar(value=60)               #position horizontale du centre de la perturbation par rapport au bord gauche de la plaque (vue du dessus)
-        self.var_nx_pert = tk.IntVar(value=5)                   # Dimension verticale en nombre d'éléments de matrice de la perturbation (1 élément = 1mm)
-        self.var_ny_pert = tk.IntVar(value=5)                   # Dimension verticale en nombre d'éléments de matrice de la perturbation (1 élément = 1mm)
+        self.var_pos_pert_y = tk.IntVar(value=35)               #position horizontale du centre de la perturbation par rapport au bord gauche de la plaque (vue du dessus)
+        self.var_nx_pert = tk.IntVar(value=3)                   # Dimension verticale en nombre d'éléments de matrice de la perturbation (1 élément = 1mm)
+        self.var_ny_pert = tk.IntVar(value=6)                   # Dimension verticale en nombre d'éléments de matrice de la perturbation (1 élément = 1mm)
         self.var_pos_therm1x = tk.IntVar(value=30)
         self.var_pos_therm1y = tk.IntVar(value=15)
         self.var_pos_therm2x = tk.IntVar(value=30)
@@ -185,7 +187,7 @@ class FenêtreInterface:
         self.var_pos_therm3x = tk.IntVar(value=30)
         self.var_pos_therm3y = tk.IntVar(value=105)
 
-        self.var_couplage = tk.DoubleVar(value=1.0)              # variable représentant le couplage thermique entre l'actuateur et la plaque
+        self.var_couplage = tk.DoubleVar(value=1.6)              # variable représentant le couplage thermique entre l'actuateur et la plaque
 
 
         # Autres variables 
@@ -193,8 +195,13 @@ class FenêtreInterface:
         self.var_afficher_perturbation = tk.BooleanVar(value=True)  #variable qui va permet à l'utilisateur d'afficher oui ou non la perturbation sur l'animation 2D
         self.var_vitesse_animation = tk.DoubleVar(value=1.0)        #variable qui va stocker la vitesse d'animation
         self.graphique_top_select = tk.StringVar(value="Carte Thermique 2D")    # variable qui va stocker le graphique sélectionné par l'utilisateur pour la sous-figure du dessus. Par défaut, ça va être le graphique 2D
+        self.var_chronometre = tk.DoubleVar(value = 0.0)
+        self.chronometre_run = tk.BooleanVar(value=True) 
         self.graphique_bottom_selcet = tk.StringVar(value="Évolution Température")  # variable qui va stocker le graphique sélectionné par l'utilisateur pour la sous-figure du dessous. Par defaut, ¸ça va être l'évolution de la température
-        
+        self.animation_on = tk.StringVar(value="Activée")
+        self.var_Nt = int(self.var_temps_simulation.get()/0.001)
+        self.var_vitesse = tk.Scale(self.f_interface, orient='horizontal', from_=0, to=10, 
+                           label="Vitesse", command=lambda val: self.var_vitesse_animation.set(float(val)/10))
 
 
 
@@ -377,8 +384,8 @@ class FenêtreInterface:
         frame = ttk.Frame(self.page_actuation)
         frame.pack(fill=tk.X, padx=10, pady=5)
         
-        ttk.Label(frame, text="Puissance de l'actuateur (W):").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_P_ac, width=10).grid(row=0, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Courant de l'actuateur (A):").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_current, width=10).grid(row=0, column=1, padx=5, pady=2)
 
         ttk.Label(frame, text="Appliquer la puissance au temps (s) :").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_t_ac, width=10).grid(row=1, column=1, padx=5, pady=2)
@@ -469,7 +476,7 @@ class FenêtreInterface:
         ttk.Label(frame, text="Temps de simulation (s):").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_temps_simulation, width=10).grid(row=0, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Vitesse de simulation:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(frame, text="Vitesse d'animation:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
 
         
 
@@ -481,19 +488,29 @@ class FenêtreInterface:
         speed_entry = ttk.Entry(speed_frame, textvariable=self.var_vitesse_animation, width=5)
         speed_entry.pack(side=tk.LEFT, padx=2)
 
-        # Label pour indiquer l'unité
-        ttk.Label(speed_frame, text="x").pack(side=tk.LEFT)
+        
 
         # Boutons prédéfinis pour les vitesses courantes
         speeds_frame = ttk.Frame(frame)
         speeds_frame.grid(row=1, column=2, padx=5, pady=2, sticky=tk.W)
 
 
-        for speed in [0.25, 0.5, 1.0, 2.0, 5.0, 10.0]:
-            btn = ttk.Button(speeds_frame, text=f"{speed}x", 
-                    command=lambda s=speed: self.var_vitesse_animation.set(s), 
-                    width=4)
-            btn.pack(side=tk.LEFT, padx=2)
+        for indice, speed in enumerate([1, 10, 100]):
+            if indice == 0:
+                btn = ttk.Button(speeds_frame, text=f"Lente", 
+                        command=lambda s=speed: self.var_vitesse_animation.set(s), 
+                        width=8)
+                btn.pack(side=tk.LEFT, padx=2)
+            elif indice == 1:
+                btn = ttk.Button(speeds_frame, text=f"Normale", 
+                        command=lambda s=speed: self.var_vitesse_animation.set(s), 
+                        width=8)
+                btn.pack(side=tk.LEFT, padx=2)
+            elif indice == 2:
+                btn = ttk.Button(speeds_frame, text=f"Rapide", 
+                        command=lambda s=speed: self.var_vitesse_animation.set(s), 
+                        width=8)
+                btn.pack(side=tk.LEFT, padx=2)
 
         
         frame = ttk.Frame(self.page_simulation)
@@ -519,10 +536,14 @@ class FenêtreInterface:
         frame = ttk.Frame(self.page_simulation)
         frame.pack(fill=tk.X, padx=10, pady=5)
         
+        animation = ttk.Combobox(frame, textvariable=self.animation_on, values=["Activée", "Désactivée"])
+        animation.grid(row=1, column=1, columnspan=2, padx=5, pady=2, sticky=tk.W+tk.E)
+        animation.bind("<<ComboboxSelected>>", lambda e: self.animation_on)  
+
     
         selection_graphiques_1 = ttk.Combobox(frame, textvariable=self.graphique_top_select,                                 #Création d'un widget qui va proposer un liste de choix que l'utilisateur pourra sélectionner
                           values=["Carte Thermique 2D", "Carte Thermique 3D", "Évolution Température", "Énergie Interne"])
-        selection_graphiques_1.grid(row=1, column=1, columnspan=2, padx=5, pady=2, sticky=tk.W+tk.E)                    #sticky est similaire à fill mais pour l'attribut grid au lieu de fill pour pack . tk.W+Tk.E signifie qu'on va étendre la texte sur toute la cellule  
+        selection_graphiques_1.grid(row=2, column=1, columnspan=2, padx=5, pady=2, sticky=tk.W+tk.E)                    #sticky est similaire à fill mais pour l'attribut grid au lieu de fill pour pack . tk.W+Tk.E signifie qu'on va étendre la texte sur toute la cellule  
         
 
         selection_graphiques_1.bind("<<ComboboxSelected>>", lambda e: self.panneau_visualisation.initialiser_graphique())          #Enregistrement de la sélection de l'utilisateur et où on va appeler 
@@ -535,7 +556,7 @@ class FenêtreInterface:
         # Option affichage Graphique 2
         selection_graphiques_2 = ttk.Combobox(frame, textvariable=self.graphique_bottom_selcet, 
                           values=["Carte Thermique 2D", "Carte Thermique 3D", "Évolution Température", "Énergie Interne"])
-        selection_graphiques_2.grid(row=2, column=1, columnspan=2, padx=5, pady=2, sticky=tk.W+tk.E)
+        selection_graphiques_2.grid(row=3, column=1, columnspan=2, padx=5, pady=2, sticky=tk.W+tk.E)
         selection_graphiques_2.bind("<<ComboboxSelected>>", lambda e: self.panneau_visualisation.initialiser_graphique())
 
 
@@ -562,6 +583,8 @@ class FenêtreInterface:
             row=2, column=0, padx=5, pady=5, sticky=tk.W+tk.E)
         ttk.Button(frame, text="Réinitialiser", command=self.reset_simulation).grid(
             row=2, column=1, padx=5, pady=5, sticky=tk.W+tk.E)
+        
+       
             
 
 
@@ -601,6 +624,8 @@ class FenêtreInterface:
         p = self.var_p.get()
         cp = self.var_cp.get()
         T_plaque = self.var_T_plaque.get()
+
+        current = self.var_current.get()
         
         Lx = self.var_Lx.get()
         Ly = self.var_Ly.get()
@@ -670,6 +695,7 @@ class FenêtreInterface:
             'pos_therm1x': pos_therm1x, 'pos_therm1y': pos_therm1y,
             'pos_therm2x': pos_therm2x,'pos_therm2y': pos_therm2y,
             'pos_therm3x': pos_therm3x,'pos_therm3y': pos_therm3y,
+            'I_ac': current
         }
         
 
@@ -686,13 +712,12 @@ class FenêtreInterface:
         Cette fonction va s'occuper de démarrer la simulation 
         '''
 
-        #Vérifier d'abord s'il n'y a pas déjà une simulation en cours
+       
 
         if self.simulation_run is True:
             messagebox.showinfo("Information", "Une simulation est déjà en cours.")
             return
         
-        # On s'assure que les variables d'intérêts sont vide
 
         self.temp_therm_1 = []
         self.temp_therm_2 = []
@@ -868,6 +893,7 @@ class FenêtreInterface:
             # Simulation, Actuateur et perturbation
             self.var_temps_simulation.set(params["simulation"]["temps_simulation"])
             self.var_P_ac.set(params["simulation"]["P_ac"])
+            self.var_current.set(params["simulation"]["I_ac"])
             self.var_t_ac.set(params["simulation"]["t_ac"])
             self.var_pos_ac_x.set(params["simulation"]["pos_ac"][0])
             self.var_pos_ac_y.set(params["simulation"]["pos_ac"][1])
@@ -955,6 +981,7 @@ class FenêtreInterface:
                 "simulation":{
                     "temps_simulation": self.var_temps_simulation.get(),
                     "P_ac": self.var_P_ac.get(),
+                    "I_ac":self.var_current.get(),
                     "t_ac": self.var_t_ac.get(),
                     "pos_ac": [self.var_pos_ac_x.get(),self.var_pos_ac_y.get()],
                     "nx_ac": self.var_nx_ac.get(),

@@ -294,7 +294,37 @@ class FenêtreAnimations:
         '''
         Lance les animations dans les deux sous-fenêtres avec gestion de toutes les combinaisons
         '''
-        # Initialiser les graphiques statiques
+        try:
+            conditions = []
+            conditions.append(0 <= self.controlleur.var_pos_pert_x.get() <= self.controlleur.var_n_x.get())
+            conditions.append(0 <= self.controlleur.var_pos_ac_x.get() <= self.controlleur.var_n_x.get())
+            conditions.append(0 <= self.controlleur.var_pos_therm1x.get() <= self.controlleur.var_n_x.get())
+            conditions.append(0 <= self.controlleur.var_pos_therm2x.get() <= self.controlleur.var_n_x.get())
+            conditions.append(0 <= self.controlleur.var_pos_therm3x.get() <= self.controlleur.var_n_x.get())
+            
+            conditions.append(0 <= self.controlleur.var_pos_pert_y.get() <= self.controlleur.var_n_y.get())
+            conditions.append(0 <= self.controlleur.var_pos_ac_y.get() <= self.controlleur.var_n_y.get())
+            conditions.append(0 <= self.controlleur.var_pos_therm1y.get() <= self.controlleur.var_n_y.get())
+            conditions.append(0 <= self.controlleur.var_pos_therm2y.get() <= self.controlleur.var_n_y.get())
+            conditions.append(0 <= self.controlleur.var_pos_therm3y.get() <= self.controlleur.var_n_y.get())
+        
+            if all(conditions):
+                
+                pass
+            else:
+                messagebox.showinfo("Erreur de positionnement", 
+                   "Certaines positions sont en dehors des limites permises.\n\n"
+                   "Veuillez vérifier que toutes les coordonnées sont comprises entre 0 et les dimensions maximales du système (n_x , n_y) "
+                   )
+                
+            
+
+
+        except (AttributeError, ValueError, KeyError):
+                
+                pass
+
+    
         if chart1 == "Évolution Température":
             self.update_graph_temp(top=True)
         elif chart1 == "Énergie Interne":
@@ -305,36 +335,37 @@ class FenêtreAnimations:
         elif chart2 == "Énergie Interne":
             self.update_graph_energie(top=False)
         
-        # Démarrer les animations demandées
-        has_top_animation = False
+       
+        has_animation_top = chart1 in ["Carte Thermique 2D", "Carte Thermique 3D"]
+        has_animation_bottom = chart2 in ["Carte Thermique 2D", "Carte Thermique 3D"]
         
-        # Animation en haut (prioritaire pour piloter la simulation)
-        if chart1 == "Carte Thermique 2D":
-            self.animation_2D_démarrer(T, params, top=True)
-            has_top_animation = True
-        elif chart1 == "Carte Thermique 3D":
-            self.animation_3D_démarrer(T, params, top=True)
-            has_top_animation = True
+        if has_animation_top:
+            if chart1 == "Carte Thermique 2D":
+                self.animation_2D_démarrer(T, params, top=True)  
+            elif chart1 == "Carte Thermique 3D":
+                self.animation_3D_démarrer(T, params, top=True)  
+            
+            
+            if has_animation_bottom:
+                if chart2 == "Carte Thermique 2D":
+                    
+                    self.animation_2D_démarrer(T, params, top=False)  
+                elif chart2 == "Carte Thermique 3D":
+                    self.animation_3D_démarrer(T, params, top=False)
         
-        # Animation en bas
-        if chart2 == "Carte Thermique 2D":
-            self.animation_2D_démarrer(T, params, top=False)
-        elif chart2 == "Carte Thermique 3D":
-            self.animation_3D_démarrer(T, params, top=False)
         
-        # Si aucune animation en haut, créer une animation invisible en haut pour piloter la simulation
-        if not has_top_animation:
-            # Important: toujours utiliser le même type d'animation que celle du bas si elle existe
-            if chart2 == "Carte Thermique 3D":
-                # Si l'animation du bas est 3D, créer une animation 3D invisible en haut
-                self.animation_3D_démarrer(T, params, top=True)
-                # Masquer le canvas après avoir créé l'animation
-                self.canvas_carte_3D_top.get_tk_widget().pack_forget()
-            else:
-                # Par défaut, créer une animation 2D invisible en haut
+        elif has_animation_bottom:
+            if chart2 == "Carte Thermique 2D":
+               
                 self.animation_2D_démarrer(T, params, top=True)
-                # Masquer le canvas après avoir créé l'animation
-                self.canvas_carte_2D_top.get_tk_widget().pack_forget()
+            elif chart2 == "Carte Thermique 3D":
+                self.animation_3D_démarrer(T, params, top=True)
+        
+       
+        else:
+            
+            self.animation_2D_démarrer(T, params, top=True)
+            self.canvas_carte_2D_top.get_tk_widget().pack_forget()
 
         
 
@@ -347,6 +378,8 @@ class FenêtreAnimations:
             self.animation1.event_source.stop()
         if self.animation2 :
             self.animation2.event_source.stop()
+        if self.controlleur.chronometre_run:
+            self.controlleur.chronometre_run = False
     
     
     def poursuivre_animations(self):
@@ -452,8 +485,8 @@ class FenêtreAnimations:
         ax.clear()
         
         # Initialisation de l'image
-        temp_data = T - 273.15  # Conversion en °C
-        im = ax.imshow(temp_data, cmap='hot', interpolation='nearest', origin='lower')
+        temp_data = T   
+        im = ax.imshow(temp_data, cmap='hot', interpolation='nearest', origin='lower') # Initialisation de la matrice de température (avant itération)
         
         
         for cbar in fig.get_axes():
@@ -476,32 +509,16 @@ class FenêtreAnimations:
         ax.set_title("Simulation Thermique 2D")
         ax.set_xlabel("Position X")
         ax.set_ylabel("Position Y")
-
-    
-        
-        # Dessiner l'actuateur et la perturbation si activés
-        if self.controlleur.var_afficher_actuateur.get():
-            i, j = params['pos_ac']
-            nx, ny = params['nx_ac']-1, params['ny_ac']-1
-            rect = plt.Rectangle((j - ny//2, i - nx//2), ny, nx, edgecolor='lime', facecolor='none', linewidth=2)
-            ax.add_patch(rect)
-            
-        if self.controlleur.var_afficher_perturbation.get() and params['P_pert'] > 0:
-            k, l = params['pos_pert']
-            nx, ny = params['nx_pert']-1, params['ny_pert']-1
-            rect = plt.Rectangle((l - ny//2, k - nx//2), ny, nx, edgecolor='cyan', facecolor='none', linewidth=2)
-            ax.add_patch(rect)
-        
-        # Ajouter les points des thermistances
         ax.plot(pos_t1y, pos_t1x, 'ro', markersize=5, label="Thermistance 1")
         ax.plot(pos_t2y, pos_t2x, 'go', markersize=5, label="Thermistance 2")
         ax.plot(pos_t3y, pos_t3x, 'bo', markersize=5, label="Thermistance Laser")
         ax.legend(loc='upper right')
         
-        canvas.draw()
+        ax.set_position([0.125, 0.1, 0.6, 0.8])
+
+
         
         def update(frame):
-            # Vérifier si la simulation doit s'arrêter
             if not self.controlleur.simulation_run or self.controlleur.temps_courant >= params['temps_simulation']:
                 try:
                     if top:
@@ -517,6 +534,28 @@ class FenêtreAnimations:
                     self.update_graph_temp(False)
                     self.update_graph_energie(True)
                     self.update_graph_energie(False)
+            
+                # Mettre à jour l'image avec la matrice de température actuelle
+                temp_data = self.controlleur.T 
+                im.set_data(temp_data)
+                
+                # Dessiner l'actuateur et la perturbation
+                if self.controlleur.var_afficher_actuateur.get():
+                    i, j = params['pos_ac']
+                    nx, ny = params['nx_ac'], params['ny_ac']
+                    rect = plt.Rectangle((j - ny//2, i - nx//2), ny, nx, edgecolor='lime', facecolor='none', linewidth=2)
+                    ax.add_patch(rect)
+                    
+                if self.controlleur.var_afficher_perturbation.get() and params['P_pert'] > 0:
+                    k, l = params['pos_pert']
+                    nx, ny = params['nx_pert'], params['ny_pert']
+                    rect = plt.Rectangle((l - ny//2, k - nx//2), ny, nx, edgecolor='cyan', facecolor='none', linewidth=2)
+                    ax.add_patch(rect)
+                
+            
+                
+                
+                canvas.draw_idle()
                 return [im]
             
             
@@ -525,34 +564,44 @@ class FenêtreAnimations:
             
             
             if top:
-                iterations = max(1, int(100 * self.controlleur.var_vitesse_animation.get()))
+                
+                if self.controlleur.animation_on.get() == 'Activée':
+                    
+                    iterations = max(1, int(100 * self.controlleur.var_vitesse_animation.get()))
+                   
+                else:
+                    iterations = self.controlleur.var_Nt
+
+                
                 
                 for _ in range(iterations):
+                    if self.controlleur.temps_courant >= params['temps_simulation']:
+                        break
                     
                     params_actuels = params.copy()
                     params_actuels['current_time'] = self.controlleur.temps_courant
-                    
+                
                     
                     self.controlleur.T = self.controlleur.simulation_thermique.vector_evolution_temperature(
                         self.controlleur.T, params_actuels)
                     
                     
-                    temp1 = self.controlleur.T[pos_t1x, pos_t1y] - 273.15
-                    temp2 = self.controlleur.T[pos_t2x, pos_t2y] - 273.15
-                    temp_laser = self.controlleur.T[pos_t3x, pos_t3y] - 273.15
+                    temp1 = self.controlleur.T[pos_t1x, pos_t1y] 
+                    temp2 = self.controlleur.T[pos_t2x, pos_t2y] 
+                    temp_laser = self.controlleur.T[pos_t3x, pos_t3y] 
                     
                     self.controlleur.temp_therm_1.append(temp1)
                     self.controlleur.temp_therm_2.append(temp2)
                     self.controlleur.temp_therm_laser.append(temp_laser)
                     
-                   
+                
                     E_current = params['p'] * params['cp'] * np.sum(self.controlleur.T) * params['vol']
                     self.controlleur.energie_list.append(E_current)
                     
                     
                     self.controlleur.temps_courant += params['dt']
                 
-                # Mettre à jour les autres graphiques si nécessaire
+                # Mettre à jour les autres graphiques 
                 if self.controlleur.graphique_top_select.get() == "Évolution Température":
                     self.update_graph_temp(True)
                 elif self.controlleur.graphique_top_select.get() == "Énergie Interne":
@@ -562,33 +611,40 @@ class FenêtreAnimations:
                     self.update_graph_temp(False)
                 elif self.controlleur.graphique_bottom_selcet.get() == "Énergie Interne":
                     self.update_graph_energie(False)
+                
+                if self.controlleur.var_afficher_actuateur.get():
+                    i, j = params['pos_ac']
+                    nx, ny = params['nx_ac'], params['ny_ac']
+                    rect = plt.Rectangle((j - ny//2, i - nx//2), ny, nx, edgecolor='lime', facecolor='none', linewidth=2)
+                    ax.add_patch(rect)
+                    
+                if self.controlleur.var_afficher_perturbation.get() and params['P_pert'] > 0:
+                    k, l = params['pos_pert']
+                    nx, ny = params['nx_pert'], params['ny_pert']
+                    rect = plt.Rectangle((l - ny//2, k - nx//2), ny, nx, edgecolor='cyan', facecolor='none', linewidth=2)
+                    ax.add_patch(rect)
             
-            # Mettre à jour l'image avec la nouvelle matrice de température
-            temp_data = self.controlleur.T - 273.15
+            # On remet à jour la matrice de température après les itération pour la prochaine frame
+            temp_data = self.controlleur.T 
             im.set_data(temp_data)
             
-            
+            # On remet à jour l'échelle de température
             vmin = np.min(temp_data)
             vmax = np.max(temp_data)
             im.set_clim(vmin=vmin, vmax=vmax)
-
-            # Assurer que la position de l'axe reste fixe
-            ax.set_position([0.125, 0.1, 0.6, 0.8])
-            
-            # Mettre à jour le titre avec le temps actuel
+        
             ax.set_title(f"Simulation Thermique 2D - Temps: {self.controlleur.temps_courant:.2f} s")
-            
-            # Redessiner le canvas
             canvas.draw_idle()
             
             return [im]
         
-        # Créer l'animation
-        anim = FuncAnimation(fig, update, frames=None, interval=50, blit=True, cache_frame_data=False)
+       
+        anim = FuncAnimation(fig, update, frames=None, interval=5, blit=True, cache_frame_data=False)
         if top:
             self.animation1 = anim
         else:
             self.animation2 = anim
+        
 
     def animation_3D_démarrer(self, T, params, top=True):
         '''
@@ -615,7 +671,7 @@ class FenêtreAnimations:
         x = np.linspace(0, params['Lx'], params['n_x'])
         y = np.linspace(0, params['Ly'], params['n_y'])
         X, Y = np.meshgrid(x, y)
-        Z = T.T - 273.15
+        Z = T.T 
         
         vmin = Z.min()
         vmax = Z.max()
@@ -662,9 +718,12 @@ class FenêtreAnimations:
             
             if top:
                 iterations = max(1, int(100 * self.controlleur.var_vitesse_animation.get()))
+                #iterations = max(1, self.controlleur.var_Nt)
                 
                 for _ in range(iterations):
-                    # Ajouter le temps actuel aux paramètres
+                    if self.controlleur.temps_courant >= params['temps_simulation']:
+                        break
+                    
                     params_actuels = params.copy()
                     params_actuels['current_time'] = self.controlleur.temps_courant
                     
@@ -672,9 +731,9 @@ class FenêtreAnimations:
                     self.controlleur.T = self.controlleur.simulation_thermique.vector_evolution_temperature(
                         self.controlleur.T, params_actuels)
                     
-                    temp1 = self.controlleur.T[pos_t1x, pos_t1y] - 273.15
-                    temp2 = self.controlleur.T[pos_t2x, pos_t2y] - 273.15
-                    temp_laser = self.controlleur.T[pos_t3x, pos_t3y] - 273.15
+                    temp1 = self.controlleur.T[pos_t1x, pos_t1y] 
+                    temp2 = self.controlleur.T[pos_t2x, pos_t2y] 
+                    temp_laser = self.controlleur.T[pos_t3x, pos_t3y] 
                     
                     self.controlleur.temp_therm_1.append(temp1)
                     self.controlleur.temp_therm_2.append(temp2)
@@ -698,7 +757,7 @@ class FenêtreAnimations:
                 
             ax.set_position([0.125, 0.1, 0.6, 0.8])
             ax.clear()
-            Z = self.controlleur.T.T - 273.15
+            Z = self.controlleur.T.T 
             
             # Calculer les nouvelles limites d'échelle de couleur dynamiquement
             vmin = Z.min()

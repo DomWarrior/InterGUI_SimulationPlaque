@@ -33,6 +33,7 @@ class TempératurePlaque:
         cp = params['cp']                           #capacité thermique massique du matériau 
         k = params['k']                             #conductivité thermique du matériau
         couplage = params['couplage']               #couplage thermique entre l'actuateur et la plaque
+        current = params['I_ac']
 
         pos_ac = params['pos_ac']                   #position du centre de l'actuateur sur la plaque
         nx_ac = params['nx_ac']                     #largeur de l'actuateur en x (mm)
@@ -89,7 +90,7 @@ class TempératurePlaque:
 
 
         # Modélisation de l'actuateur comme une entrée/sortie d'énergie du système plaque
-        if P_ac is not None and temps_actuel >= t_ac:       # ici on a rajouter temps_actuel afin de pouvoir activer la puissance après un temps t par rapport au début de la simulation 
+        if current is not None and temps_actuel >= t_ac:       # ici on a rajouter temps_actuel afin de pouvoir activer la puissance après un temps t par rapport au début de la simulation 
             i, j = pos_ac                                   #on positionne le centre de l'actuateur sur la plaque où i est la coordonnée verticale (y) et j la coordonnée horiontale (x)
             i_min = max(0, i - nx_ac//2)
             i_max = min(T.shape[0], i + nx_ac//2+1)         #ici j'ai rajouter +1 pour prendre en compte la largeur impair de l'actuateur
@@ -98,7 +99,7 @@ class TempératurePlaque:
             
             n_elements = (i_max - i_min) * (j_max - j_min)      # correspond au nombre d'éléments représentant l'actuateur donc la surperficie de celui-ci
             if n_elements > 0:
-                P_par_element = (P_ac*couplage) / n_elements
+                P_par_element = (current*couplage) / n_elements
                 T_new[i_min:i_max, j_min:j_max] += (P_par_element*dt)/(p*cp*vol)
 
         # Modélisation de l'actuateur comme une entrée/sortie d'énergie du système plaque .... même modélisation que l'actuateur
