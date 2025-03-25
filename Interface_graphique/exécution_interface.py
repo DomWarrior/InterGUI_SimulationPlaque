@@ -3,9 +3,9 @@ from interface import FenêtreInterface
 
 
 def main():
-    root = tk.Tk()
-    app = FenêtreInterface(root)
-    root.mainloop()
+    interface = tk.Tk()
+    app = FenêtreInterface(interface)       # Création d'une instance de la classe            
+    interface.mainloop()                    #Démarre la boucle principale de tk.Tk()
 
 if __name__=="__main__":
     main()

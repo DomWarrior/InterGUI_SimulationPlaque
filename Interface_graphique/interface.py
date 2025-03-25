@@ -7,25 +7,12 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 import tkinter as tk                                    #Module python qu'on va utiliser pour faire l'interface graphique
 from tkinter import ttk, messagebox, filedialog         # ici, ttk est pour avoir l'option de mettre des ''widgets'' qui offrent un rendu plus moderne,
                                                         #messagebox sert à pourvoir afficher des messages à l'utilisateur et filedialog permet de travailler avec des fichiers (sauvegarder , charger ..)
 
 import matplotlib.pyplot as plt                     
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk              # FigureCanvasTkAgg permet de mettre de figure plt dans les widgets de ttk et NavigationToolbar2Tk fourni des outils pour que l'utilisateur puisse intéragir avec le canvas (zoomer, déplacer ...) 
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg              # FigureCanvasTkAgg permet de mettre de figure plt dans les widgets de ttk 
 from matplotlib.figure import Figure                                                                #classe qui permet de créer des figures
 
 from simulation_temp import TempératurePlaque                                                       #importation de fichier contenant la modélisation de la température
@@ -36,35 +23,11 @@ import time
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class FenêtreInterface:
     '''
     Cette classe gérer l'interface graphique avec laquelle l'utilisateur va être en mesure d'intéragir afin de contrôleur les paramètres,
     les graphiques et les animations de la simulation de la température dans la plaque....
     '''
-
-
-
-
-
 
 
 
@@ -107,13 +70,6 @@ class FenêtreInterface:
 
 
 
-
-
-
-
-
-
-
     def initialisation_donnees_simulation(self):
         '''
         Cette fonction va s'occuper d'initialiser les variables qui va permettre de contrôleur la simulation et de récolter les données de la simulation
@@ -130,12 +86,6 @@ class FenêtreInterface:
         self.anim1 = None               # cet instance va permettre de stocker l'animation qui sera afficher dans le sous-fenêtre du haut du panneau de visualisation 
         self.anim2 = None               #même chose, mais pour celle du bas
         self.T = None                   #Matrice de la température dans la plaque
-
-
-
-
-
-
 
 
 
@@ -206,10 +156,6 @@ class FenêtreInterface:
 
 
 
-
-
-
-
     def creer_interface(self):
         '''
         Cette fonction va créer l'entièreté de l'interface qui va contenir le panneau de contrôle et le panneau de visualisation
@@ -228,11 +174,6 @@ class FenêtreInterface:
 
         self.creer_panneau_de_controle()        # Ici on fait appel à la fonction creer_panneau_de_controle définie plus loin dans la classe pour créer le panneau de contrôle
         self.panneau_visualisation = FenêtreAnimations(self.panneau_visu, self)      #Ici on défini le panneau de visualisation comme un objet appartenant à la Classe FenêtreAnimation
-
-
-
-
-
 
 
 
@@ -265,11 +206,6 @@ class FenêtreInterface:
         self.creation_page_dimensions()
         self.creation_page_actuateur()
         self.creation_page_simulation()
-
-
-
-
-
 
 
 
@@ -326,12 +262,6 @@ class FenêtreInterface:
 
 
 
-
-
-
-
-
-    
     def creation_page_dimensions(self):
         '''
         Cette fonction créer la mise en forme de la page Dimensions. Le processus est identique à celui de la fonction précédente
@@ -362,13 +292,6 @@ class FenêtreInterface:
         
         ttk.Label(frame, text="Nombre de points en y (n_y):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_n_y, width=10).grid(row=1, column=1, padx=5, pady=2)
-
-
-
-
-
-
-
 
 
 
@@ -450,14 +373,6 @@ class FenêtreInterface:
         
         ttk.Label(frame, text="Position y thermistance 3 :").grid(row=5, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_pos_therm3y, width=10).grid(row=5, column=1, padx=5, pady=2)
-
-
-
-
-
-
-
-
 
 
 
@@ -584,15 +499,6 @@ class FenêtreInterface:
         ttk.Button(frame, text="Réinitialiser", command=self.reset_simulation).grid(
             row=2, column=1, padx=5, pady=5, sticky=tk.W+tk.E)
         
-       
-            
-
-
-
-
-
-
-
 
 
 
@@ -608,12 +514,6 @@ class FenêtreInterface:
 
 
 
-
-
-
-
- 
-    
 
     def recup_params_sim(self):
         '''
@@ -697,12 +597,6 @@ class FenêtreInterface:
             'pos_therm3x': pos_therm3x,'pos_therm3y': pos_therm3y,
             'I_ac': current
         }
-        
-
-
-
-
-
 
 
 
@@ -743,12 +637,6 @@ class FenêtreInterface:
 
 
 
-
-
-
-
-
-
     def pause_simulation(self):
         '''
         Cette fonction permet de mettre sur pause la simulation en cours s'il y a effectivement un simulation en cours, 
@@ -770,12 +658,6 @@ class FenêtreInterface:
 
 
 
-
-
-
-
-
-
     def stop_simulation(self):
         '''
         Cette fonction permet de mettre d'arrêter la simulation en cours s'il y a effectivement un simulation en cours, 
@@ -790,14 +672,6 @@ class FenêtreInterface:
             self.simulation_paused = False
         else:
             messagebox.showinfo('Information', 'Aucune simulation en cours')
-
-
-
-
-
-
-
-
 
 
 
@@ -823,12 +697,6 @@ class FenêtreInterface:
         self.simulation_paused = False                      
         self.panneau_visualisation.reset_graphiques()           #On réinitialise les graphiques
 
-       
-
-
-
-
-
 
 
 
@@ -842,12 +710,6 @@ class FenêtreInterface:
 
         if fichier :
             self.charger_params(fichier)
-
-
-
-
-
-
 
 
 
@@ -926,11 +788,6 @@ class FenêtreInterface:
 
 
 
-
-
-
-
-
     def Windows_sauvegarder_params(self):
         '''
         cette fonction permet d'ouvrir une fenêtre dans laquelle l'utilisateur pourra sauvegarder des fichers json contenant les paramètres de la simulation.
@@ -942,12 +799,6 @@ class FenêtreInterface:
 
         if fichier :
             self.sauvegarde_params(fichier)
-
-
-
-
-
-
 
 
 
@@ -1009,11 +860,6 @@ class FenêtreInterface:
 
         except Exception as erreur:
             messagebox.showerror("Erreur", f"Impossible de sauvegarder les paramètres : {str(erreur)}")
-
-
-
-
-
 
 
 
