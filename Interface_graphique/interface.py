@@ -457,7 +457,7 @@ class FenêtreInterface:
 
     
         selection_graphiques_1 = ttk.Combobox(frame, textvariable=self.graphique_top_select,                                 #Création d'un widget qui va proposer un liste de choix que l'utilisateur pourra sélectionner
-                          values=["Carte Thermique 2D", "Carte Thermique 3D", "Évolution Température", "Énergie Interne"])
+                          values=["Carte Thermique 2D", "Carte Thermique 3D"])
         selection_graphiques_1.grid(row=2, column=1, columnspan=2, padx=5, pady=2, sticky=tk.W+tk.E)                    #sticky est similaire à fill mais pour l'attribut grid au lieu de fill pour pack . tk.W+Tk.E signifie qu'on va étendre la texte sur toute la cellule  
         
 
@@ -470,7 +470,7 @@ class FenêtreInterface:
 
         # Option affichage Graphique 2
         selection_graphiques_2 = ttk.Combobox(frame, textvariable=self.graphique_bottom_selcet, 
-                          values=["Carte Thermique 2D", "Carte Thermique 3D", "Évolution Température", "Énergie Interne"])
+                          values=["Évolution Température", "Énergie Interne"])
         selection_graphiques_2.grid(row=3, column=1, columnspan=2, padx=5, pady=2, sticky=tk.W+tk.E)
         selection_graphiques_2.bind("<<ComboboxSelected>>", lambda e: self.panneau_visualisation.initialiser_graphique())
 
@@ -499,6 +499,18 @@ class FenêtreInterface:
         ttk.Button(frame, text="Réinitialiser", command=self.reset_simulation).grid(
             row=2, column=1, padx=5, pady=5, sticky=tk.W+tk.E)
         
+        self.creation_frame(self.page_simulation, "Temps de simulation")
+
+        chrono_frame = ttk.Frame(self.page_simulation)
+        chrono_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        
+        ttk.Label(chrono_frame, text="Temps écoulé:").grid(row=0, column=0, padx=5, pady=2, sticky=tk.W)
+
+
+        self.label_chrono = ttk.Label(chrono_frame, text="00:00:000", font=("Arial", 10, "bold"))
+        self.label_chrono.grid(row=0, column=1, padx=5, pady=2, sticky=tk.W)
+                        
 
 
 
@@ -632,12 +644,15 @@ class FenêtreInterface:
 
         # En passant à l'état :True , on peut appeler la fonction dans le fichier animation.py qui s'occupe de lancer la simulation en mettant les paramètres.
         self.panneau_visualisation.lancer_animations(self.T, params, self.graphique_top_select.get(), self.graphique_bottom_selcet.get())
-        #self.graphique_top_select.get() et self.graphique_bottom_selcet.get()
+        
+        self.simulation_run = True
+        self.démarrer_chronometre()
 
 
 
 
     def pause_simulation(self):
+
         '''
         Cette fonction permet de mettre sur pause la simulation en cours s'il y a effectivement un simulation en cours, 
         sinon elle renvoie un message d'erreur. Elle utilise les fonctions de animation.py pour effectuer les différentes opérations.
@@ -646,11 +661,14 @@ class FenêtreInterface:
 
         if self.simulation_run is True:                             # Si l'animation est en cours
             if self.simulation_paused:                              # Et si l'animation est déjà sur pause (True)
+                
                 self.simulation_paused = False                      #Alors le prochain clic de l'utilisateur sur le bouton pause va faire poursuivre l'animation  
+                self.démarrer_chronometre()
                 self.panneau_visualisation.poursuivre_animations()
 
             else:                                                   # Sinon, on met l'animation sur pause 
                 self.simulation_paused = True
+                self.arrêter_chronometre()
                 self.panneau_visualisation.pause_animations()
         else:
             messagebox.showinfo('Information', 'Aucune simulation en cours')
@@ -667,9 +685,9 @@ class FenêtreInterface:
 
         if self.simulation_run is True:                             # Si l'animation est en cours
             self.panneau_visualisation.stop_animations()
-
             self.simulation_run = False
             self.simulation_paused = False
+            self.arrêter_chronometre()
         else:
             messagebox.showinfo('Information', 'Aucune simulation en cours')
 
@@ -696,7 +714,7 @@ class FenêtreInterface:
 
         self.simulation_paused = False                      
         self.panneau_visualisation.reset_graphiques()           #On réinitialise les graphiques
-
+        self.réinitialiser_chronometre()
 
 
 
@@ -893,4 +911,47 @@ class FenêtreInterface:
         except Exception as erreur:
             messagebox.showinfo("Erreur", f"Impossible de sauvegarder: {str(erreur)}")
 
+
+
+
+    def démarrer_chronometre(self):
+        if not hasattr(self, 'temps_debut_chrono'):
+            self.temps_debut_chrono = time.time()
+            self.temps_ecoule_total = 0
+        elif not self.chronometre_run:
+            self.temps_debut_chrono = time.time() - self.temps_ecoule_total
         
+        self.chronometre_run = True
+        self.mettre_a_jour_chronometre()
+
+
+
+
+    def arrêter_chronometre(self):
+        
+        if self.chronometre_run:
+            self.temps_ecoule_total = time.time() - self.temps_debut_chrono
+            self.chronometre_run = False
+
+
+
+
+    def réinitialiser_chronometre(self):
+        
+        self.temps_debut_chrono = time.time()
+        self.temps_ecoule_total = 0
+        self.chronometre_run = False
+        self.label_chrono.config(text="00:00:00")
+
+
+
+
+    def mettre_a_jour_chronometre(self):
+        
+        if self.chronometre_run and self.simulation_run:
+            temps_ecoule = time.time() - self.temps_debut_chrono
+            minutes = int(temps_ecoule // 60)
+            secondes = int(temps_ecoule % 60)
+            millisecondes = int((temps_ecoule % 1) * 1000)
+            self.label_chrono.config(text=f"{minutes:02d}:{secondes:02d}:{millisecondes:03d}")
+            self.f_interface.after(1, self.mettre_a_jour_chronometre)
