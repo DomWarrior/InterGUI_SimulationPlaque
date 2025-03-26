@@ -1,0 +1,219 @@
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.animation import FuncAnimation
+from mpl_toolkits.mplot3d import Axes3D
+import json
+import tkinter
+import csv
+
+
+from Données_test_10 import Laser, T2, Actu, temps
+
+
+
+# Charger les paramètres de simulation
+with open('parametres_simulationYD.json', 'r') as f:
+    params = json.load(f)
+
+# Propriétés thermiques et physiques
+k = params["proprietes_thermiques"]["k"]
+p = params["proprietes_thermiques"]["p"]
+cp = params["proprietes_thermiques"]["cp"]
+Lx = params["dimensions_plaque"]["Lx"]
+Ly = params["dimensions_plaque"]["Ly"]
+e = params["dimensions_plaque"]["e"]
+
+# Discrétisation
+n_x = params["discretisation"]["n_x"]
+n_y = params["discretisation"]["n_y"]
+dx = Lx / n_x
+dy = Ly / n_y
+dz = e
+vol = dx * dy * e
+
+# Simulation
+indice = 1
+freq_e = 2
+temps_simulation = len(temps[1:])*freq_e
+a = k / (cp * p)
+dt = 0.001
+Nt = int(temps_simulation / dt)
+
+# Paramètres actuateur
+pos_ac = tuple(params["simulation"]["pos_ac"])
+nx_ac = params["simulation"]["nx_ac"]
+ny_ac = params["simulation"]["ny_ac"]
+h = params["convection"]["h"]
+
+# Fonction d'évolution de la température (DOIT RESTER IDENTIQUE)
+def vector_evolution_temperature(T, h, pos_ac, nx_ac, ny_ac, P_ac=None,
+                               P_pert=None, pos_pert=None, nx_pert=None, ny_pert=None):
+    T_new = T.copy()
+
+    # Conduction éléments centraux
+    T_new[1:-1,1:-1] = T[1:-1, 1:-1] + a*dt*((T[2:,1:-1]-2*T[1:-1, 1:-1] +T[0:-2, 1:-1])/(dy**2) +
+                                           (T[1:-1,2:]-2*T[1:-1, 1:-1] +T[1:-1, 0:-2])/(dx**2))
+    
+    # Conduction bords et coins
+    T_new[0, 1:-1] += a * dt * ((T[1, 1:-1] - T[0, 1:-1]) / dy**2 +
+                               (T[0, 2:] - 2 * T[0, 1:-1] + T[0, :-2]) / dx**2)
+    
+    T_new[-1, 1:-1] += a * dt * ((T[-2, 1:-1] - T[-1, 1:-1]) / dy**2 +
+                                (T[-1, 2:] - 2 * T[-1, 1:-1] + T[-1, :-2]) / dx**2)
+    
+    T_new[1:-1, 0] += a * dt * ((T[2:, 0] - 2 * T[1:-1, 0] + T[:-2, 0]) / dy**2 +
+                               (T[1:-1, 1] - T[1:-1, 0]) / dx**2)
+    
+    T_new[1:-1, -1] += a * dt * ((T[2:, -1] - 2 * T[1:-1, -1] + T[:-2, -1]) / dy**2 +
+                                (T[1:-1, -2] - T[1:-1, -1]) / dx**2)
+    
+    # Coins
+    T_new[0, 0] += a * dt * ((T[1, 0] - T[0, 0]) / dy**2 + (T[0, 1] - T[0, 0]) / dx**2)   
+    T_new[0, -1] += a * dt * ((T[1, -1] - T[0, -1]) / dy**2 + (T[0, -2] - T[0, -1]) / dx**2) 
+    T_new[-1, 0] += a * dt * ((T[-2, 0] - T[-1, 0]) / dy**2 + (T[-1, 1] - T[-1, 0]) / dx**2)   
+    T_new[-1, -1] += a * dt * ((T[-2, -1] - T[-1, -1]) / dy**2 + (T[-1, -2] - T[-1, -1]) / dx**2)
+
+    # Convection
+    Coeff = (h*dt)/(p*cp)
+    T_new[0, :] += 1*Coeff*(T_air-T[0,:])*((dz*dx)/(vol))     # haut   #ici, j'ai mis un coefficient 1 parce que si je veux enlever la convection juste sur 1 cote, il me suffira juste de rempacer 1 par 0
+    T_new[-1, :] += 1*Coeff*(T_air-T[-1,:])*((dz*dx)/(vol))   # bas
+    T_new[:,0] += 1*Coeff*(T_air-T[:,0])*((dz*dy)/(vol))      # gauche
+    T_new[:,-1] += 1*Coeff*(T_air-T[:,-1])*((dz*dy)/(vol))    # droite
+    T_new[:,:] += 2*Coeff*(T_air-T[:,:])*((dx*dy)/vol)      # dessus/dessous  #ici, le coefficient doit etre a 2 si on veut que les 2 surfaces soient soumises a la convection
+
+    # Actuateur
+    if P_ac is not None:
+        i, j = pos_ac
+        P_par_element = P_ac/(nx_ac*ny_ac)
+        T_new[i-nx_ac//2:i+nx_ac//2+1, j-ny_ac//2:j+ny_ac//2+1] += (P_par_element*dt)/(p*cp*vol)
+
+    # Perturbation
+    if P_pert is not None:
+        k, l = pos_pert
+        P_par_element = P_pert/(nx_pert*ny_pert)
+        T_new[k-nx_pert//2:k+nx_pert//2, l-ny_pert//2:l+ny_pert//2] += (P_par_element*dt)/(p*cp*vol)
+
+    return T_new
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+T_ref = Actu[indice]
+T_air = T_ref
+T_ref = np.ones((n_x, n_y))*(T_ref)
+
+temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[indice:], T2[indice:], Laser[indice:] 
+
+
+
+
+
+A = 0.44
+
+h_values = 12.5
+P_values = 1.15*A
+errors = []
+
+
+
+
+
+
+T_test = T_ref
+temp_therm_1_test, temp_therm_2_test, temp_therm_laser_test = [], [], []
+
+for _ in range(Nt):
+    T_test = vector_evolution_temperature(T_test, h_values, pos_ac, nx_ac, ny_ac, P_values)
+    temp_therm_1_test.append(T_test[30, 15])
+    temp_therm_2_test.append(T_test[30, 60])
+    temp_therm_laser_test.append(T_test[30, 105])
+    
+temp_therm_1_test = temp_therm_1_test[::int(freq_e/dt)]
+temp_therm_2_test = temp_therm_2_test[::int(freq_e/dt)]
+temp_therm_laser_test = temp_therm_laser_test[::int(freq_e/dt)]
+
+error = np.sum((np.array(temp_therm_laser_test) - np.array(temp_therm_laser_ref))**2) #+ \
+            #np.sum((np.array(temp_therm_2_test) - np.array(temp_therm_2_ref))**2) 
+print(error)        
+       
+
+
+    
+# Définition correcte de l'axe des temps basé sur les mesures expérimentales
+
+
+
+times = np.array(temps[indice:])# Utiliser les temps expérimentaux
+
+therm1_ref = np.array(temp_therm_1_ref[100:])
+therm2_ref = np.array(temp_therm_2_ref[100:])
+laser_ref  = np.array(temp_therm_laser_ref[100:])
+
+therm1_sim = np.array(temp_therm_1_test[100:])
+therm2_sim = np.array(temp_therm_2_test[100:])
+laser_sim  = np.array(temp_therm_laser_test[100:])
+
+
+err_therm1_percent = 100 * np.abs(therm1_sim - therm1_ref) / np.abs(therm1_ref)
+err_therm2_percent = 100 * np.abs(therm2_sim - therm2_ref) / np.abs(therm2_ref)
+err_laser_percent  = 100 * np.abs(laser_sim - laser_ref)   / np.abs(laser_ref)
+
+
+max_err_therm1 = np.max(err_therm1_percent)
+max_err_therm2 = np.max(err_therm2_percent)
+max_err_laser  = np.max(err_laser_percent)
+
+print(f"Écart max Thermistance 1 (en %) : {max_err_therm1:.2f}")
+print(f"Écart max Thermistance 2 (en %) : {max_err_therm2:.2f}")
+print(f"Écart max Laser         (en %) : {max_err_laser:.2f}")
+
+
+all_errors_percent = np.concatenate([err_therm1_percent, err_therm2_percent, err_laser_percent])
+max_err_all = np.max(all_errors_percent)
+print(f"Écart max global (en %) : {max_err_all:.2f}")
+
+
+plt.figure(figsize=(10, 5))
+
+# Thermistance 1
+plt.plot(times, temp_therm_laser_ref, linestyle='-', color='b', label='Thermistance de l\'actuateur du  prototype')
+plt.plot(times, temp_therm_laser_test, linestyle='--', color='r', 
+         label=f'Thermistance de l\'actuateur du simulateur')
+
+plt.plot(times, temp_therm_1_ref, linestyle='-', color='b', label='Thermistance 2 du  prototype')
+plt.plot(times, temp_therm_1_test, linestyle='--', color='r', 
+         label=f'Thermistance 2 du  simulateur ')
+
+plt.plot(times, temp_therm_2_ref, linestyle='-', color='b', label='Thermistance où le laser du  prototype')
+plt.plot(times, temp_therm_2_test, linestyle='--', color='r', 
+         label=f'Thermistance où le laser du  simulateur ')
+
+plt.xlabel("Temps (s)")
+plt.ylabel("Température (°C)")
+
+
+plt.legend()
+plt.grid(True)
+plt.show()

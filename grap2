@@ -1,0 +1,136 @@
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.patches import Ellipse
+
+# Valeurs de gain testées (en W/A)
+K_values = np.array([1.58, 1.60, 1.63, 1.66, 1.69, 1.72])
+
+# --- Données pour h = 11.9 ---
+# Test 1 (h = 11.9)
+error_global_h119_test1 = np.array([4.72, 4.24, 3.76, 3.28, 2.81, 2.85])
+# Test 2 (h = 11.9)
+error_global_h119_test2 = np.array([2.27, 2.90, 3.32, 3.96, 4.38, 5.02])
+# Test 3 (h = 11.9)
+error_global_h119_test3 = np.array([2.02, 2.76, 3.33, 3.89, 3.64, 4.45])
+
+# --- Données pour h = 12.5 ---
+# Test 1 (h = 12.5)
+error_global_h125_test1 = np.array([5.78, 5.25, 4.72, 4.19, 3.66, 3.13])
+# Test 2 (h = 12.5)
+error_global_h125_test2 = np.array([2.15, 2.21, 2.62, 3.24, 3.64, 4.26])
+# Test 3 (h = 12.5)
+error_global_h125_test3 = np.array([1.55, 2.00, 2.52, 3.07, 3.62, 4.16])
+
+# Création de deux sous-graphes (1 ligne, 2 colonnes)
+fig, axs = plt.subplots(1, 2, figsize=(14, 6), sharey=True)
+
+# Sous-graphe pour h = 11.9
+axs[0].plot(K_values, error_global_h119_test1, marker='o', linestyle='-', label='Test 1 (h = 11.9)', color='red')
+axs[0].plot(K_values, error_global_h119_test2, marker='s', linestyle='-', label='Test 2 (h = 11.9)', color='green')
+axs[0].plot(K_values, error_global_h119_test3, marker='^', linestyle='-', label='Test 3 (h = 11.9)', color='blue')
+axs[0].set_xlabel('Gain $K_a$ (W/A)', fontsize=13)
+axs[0].set_ylabel('Erreur globale (%)', fontsize=13)
+axs[0].set_title('a) h = 11.9 W/m²K', fontsize=13)
+axs[0].set_ylim(0, 7)
+axs[0].grid(True)
+axs[0].legend(loc='upper right')
+axs[0].tick_params(axis='both', which='major', labelsize=12) 
+
+# Définir les décalages individuels pour chaque annotation
+# Format: [x_offset, y_offset]
+# Pour h = 11.9
+offsets_h119_test1 = [
+    [0.0, 0.5],  # K=1.58
+    [0.0, 0.5],  # K=1.60
+    [0.0, 0.5],  # K=1.63
+    [0.0, -0.5],  # K=1.66
+    [0.0, -0.5], # K=1.69 (point spécial, annoté en-dessous)
+    [0.0, -0.5]   # K=1.72
+]
+
+offsets_h119_test2 = [
+    [0.0, +0.3], # K=1.58
+    [0.0, +0.3], # K=1.60
+    [0.0, 0.15], # K=1.63
+    [0.0, 0.3],  # K=1.66
+    [0.0, 0.3],  # K=1.69
+    [0.0, 0.3]   # K=1.72
+]
+
+offsets_h119_test3 = [
+    [0.0, -0.5], # K=1.58
+    [0.0, -0.5], # K=1.60
+    [0.0, -0.7], # K=1.63
+    [0.0, -0.4], # K=1.66
+    [0.0, -0.5], # K=1.69
+    [0.0, -0.5]  # K=1.72
+]
+
+# Pour h = 12.5
+offsets_h125_test1 = [
+    [0.0, 0.3],  # K=1.58
+    [0.0, 0.3],  # K=1.60
+    [0.0, 0.3],  # K=1.63
+    [0.0, 0.3],  # K=1.66
+    [0.0, 0.7],  # K=1.69
+    [0.0, 0.3]   # K=1.72
+]
+
+offsets_h125_test2 = [
+    [0.0, 0.3], # K=1.58
+    [0.0, 0.3], # K=1.60
+    [0.0, 0.3], # K=1.63
+    [0.0, 0.2],  # K=1.66
+    [0.0, 0.3],  # K=1.69
+    [0.0, 0.2]   # K=1.72
+]
+
+offsets_h125_test3 = [
+    [0.0, -0.5], # K=1.58
+    [0.0, -0.5], # K=1.60
+    [0.0, -0.5], # K=1.63
+    [0.0, -0.5], # K=1.66
+    [0.0, -0.5], # K=1.69
+    [0.0, -0.4]  # K=1.72
+]
+
+# Annoter les points avec les décalages personnalisés
+for i, K in enumerate(K_values):
+    # Pour h = 11.9
+    axs[0].text(K + offsets_h119_test1[i][0], error_global_h119_test1[i] + offsets_h119_test1[i][1], 
+                f"{error_global_h119_test1[i]:.2f}%", ha='center', color='red')
+    
+    axs[0].text(K + offsets_h119_test2[i][0], error_global_h119_test2[i] + offsets_h119_test2[i][1], 
+                f"{error_global_h119_test2[i]:.2f}%", ha='center', color='green')
+    
+    axs[0].text(K + offsets_h119_test3[i][0], error_global_h119_test3[i] + offsets_h119_test3[i][1], 
+                f"{error_global_h119_test3[i]:.2f}%", ha='center', color='blue')
+
+# Ajouter une ellipse pour mettre en évidence le point spécial
+
+
+# Sous-graphe pour h = 12.5
+axs[1].plot(K_values, error_global_h125_test1, marker='o', linestyle='-', color='red', label='Test 1 (h = 12.5)')
+axs[1].plot(K_values, error_global_h125_test2, marker='s', linestyle='-', color='green', label='Test 2 (h = 12.5)')
+axs[1].plot(K_values, error_global_h125_test3, marker='^', linestyle='-', color='blue', label='Test 3 (h = 12.5)')
+axs[1].set_xlabel('Gain $K_a$ (W/A)', fontsize=13)
+axs[1].set_title('b) h = 12.5 W/m²K', fontsize=13)
+axs[1].set_ylim(0, 7)
+axs[1].grid(True)
+axs[1].legend(loc='upper right')
+axs[1].tick_params(axis='both', which='major', labelsize=12) 
+
+# Annoter les points pour h = 12.5 avec des décalages personnalisés
+for i, K in enumerate(K_values):
+    axs[1].text(K + offsets_h125_test1[i][0], error_global_h125_test1[i] + offsets_h125_test1[i][1], 
+                f"{error_global_h125_test1[i]:.2f}%", ha='center', color='red')
+    
+    axs[1].text(K + offsets_h125_test2[i][0], error_global_h125_test2[i] + offsets_h125_test2[i][1], 
+                f"{error_global_h125_test2[i]:.2f}%", ha='center', color='green')
+    
+    axs[1].text(K + offsets_h125_test3[i][0], error_global_h125_test3[i] + offsets_h125_test3[i][1], 
+                f"{error_global_h125_test3[i]:.2f}%", ha='center', color='blue')
+
+
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+plt.show()
