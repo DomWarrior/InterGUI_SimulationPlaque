@@ -7,7 +7,7 @@ import tkinter
 import csv
 
 
-from Données_test_10 import Laser, T2, Actu, temps
+from Données_test_12 import Laser, T2, Actu, temps
 
 
 
@@ -32,9 +32,9 @@ dz = e
 vol = dx * dy * e
 
 # Simulation
-indice = 1
+indice = 4
 freq_e = 2
-temps_simulation = len(temps[1:])*freq_e
+temps_simulation = len(temps[indice:])*freq_e
 a = k / (cp * p)
 dt = 0.001
 Nt = int(temps_simulation / dt)
@@ -120,7 +120,7 @@ def vector_evolution_temperature(T, h, pos_ac, nx_ac, ny_ac, P_ac=None,
 
 
 
-T_ref = Actu[indice]
+T_ref = Laser[indice]
 T_air = T_ref
 T_ref = np.ones((n_x, n_y))*(T_ref)
 
@@ -130,10 +130,10 @@ temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[indice:], T2[ind
 
 
 
-A = 0.44
+A = 0.635
 
 h_values = 12.5
-P_values = 1.15*A
+P_values = 1.2*A
 errors = []
 
 

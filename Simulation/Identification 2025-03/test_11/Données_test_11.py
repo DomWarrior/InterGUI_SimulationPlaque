@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-with open('Simulation\Données Brutes\TestFroid1.csv','r') as csv_files:
+with open('Simulation\Données Brutes\Test11.csv','r') as csv_files:
     reader = csv.reader(csv_files, delimiter=';')
 
     temps = []
@@ -17,8 +17,8 @@ with open('Simulation\Données Brutes\TestFroid1.csv','r') as csv_files:
         try:
             temps.append(float(i[0]))
             Actu.append(float(i[2]))
-            T2.append(float(i[3]))
-            Laser.append(float(i[4]))
+            T2.append(float(i[4]))
+            Laser.append(float(i[6]))
 
         except: 
             pass
@@ -26,7 +26,7 @@ with open('Simulation\Données Brutes\TestFroid1.csv','r') as csv_files:
 
 
 
-plt.plot(temps[1:], Actu[1:])
-plt.plot(temps[1:], T2[1:])
-plt.plot(temps[1:], Laser[1:])
+plt.plot(temps[4:], Actu[4:])
+plt.plot(temps[4:], T2[4:])
+plt.plot(temps[4:], Laser[4:])
 plt.show()

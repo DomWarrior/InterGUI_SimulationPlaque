@@ -34,7 +34,7 @@ vol = dx * dy * e
 # Simulation
 indice = 1
 freq_e = 0.15
-temps_simulation = len(temps[1:])*freq_e
+temps_simulation = len(temps[4:])*freq_e
 a = k / (cp * p)
 dt = 0.001
 Nt = int(temps_simulation / dt)

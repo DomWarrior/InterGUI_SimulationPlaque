@@ -32,9 +32,9 @@ dz = e
 vol = dx * dy * e
 
 # Simulation
-indice = 1
-freq_e = 0.15
-temps_simulation = len(temps[1:])*freq_e
+indice = 7
+freq_e = 2
+temps_simulation = len(temps[indice:])*freq_e
 a = k / (cp * p)
 dt = 0.001
 Nt = int(temps_simulation / dt)
@@ -130,10 +130,10 @@ temp_therm_1_ref, temp_therm_2_ref, temp_therm_laser_ref = Actu[indice:], T2[ind
 
 
 
-A = 1
+A = -0.74
 
 h_values = 12.5
-P_values = 1.60
+P_values = 1.30*A
 errors = []
 
 
@@ -167,13 +167,13 @@ print(error)
 
 times = np.array(temps[indice:])# Utiliser les temps expérimentaux
 
-therm1_ref = np.array(temp_therm_1_ref[100:])
-therm2_ref = np.array(temp_therm_2_ref[100:])
-laser_ref  = np.array(temp_therm_laser_ref[100:])
+therm1_ref = np.array(temp_therm_1_ref[indice:])
+therm2_ref = np.array(temp_therm_2_ref[indice:])
+laser_ref  = np.array(temp_therm_laser_ref[indice:])
 
-therm1_sim = np.array(temp_therm_1_test[100:])
-therm2_sim = np.array(temp_therm_2_test[100:])
-laser_sim  = np.array(temp_therm_laser_test[100:])
+therm1_sim = np.array(temp_therm_1_test[indice:])
+therm2_sim = np.array(temp_therm_2_test[indice:])
+laser_sim  = np.array(temp_therm_laser_test[indice:])
 
 
 err_therm1_percent = 100 * np.abs(therm1_sim - therm1_ref) / np.abs(therm1_ref)
