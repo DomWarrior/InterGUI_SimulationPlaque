@@ -499,7 +499,7 @@ class FenêtreInterface:
         ttk.Button(frame, text="Réinitialiser", command=self.reset_simulation).grid(
             row=2, column=1, padx=5, pady=5, sticky=tk.W+tk.E)
         
-        self.creation_frame(self.page_simulation, "Temps de simulation")
+        self.creation_frame(self.page_simulation, "Chronomètre")
 
         chrono_frame = ttk.Frame(self.page_simulation)
         chrono_frame.pack(fill=tk.X, padx=10, pady=5)

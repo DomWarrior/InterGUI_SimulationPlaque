@@ -437,11 +437,11 @@ class FenêtreAnimations:
             if barre_color is not ax:  # Si ce n'est pas l'axe principal
                 barre_color.remove()  # Supprimer la barre de couleur
 
-        # Position fixe pour l'axe principal
+        
         ax.set_position([0.125, 0.1, 0.6, 0.8])
 
         # Créer une barre de couleur avec une position fixe
-        cax = fig.add_axes([0.85, 0.1, 0.03, 0.8])  # [x, y, width, height]
+        cax = fig.add_axes([0.85, 0.1, 0.03, 0.8]) 
         colorbar = fig.colorbar(im, cax=cax)
         colorbar.set_label('Température (°C)')
 
@@ -480,11 +480,11 @@ class FenêtreAnimations:
                     self.graph_energie(True)
                     self.graph_energie(False)
             
-                # Mettre à jour l'image avec la matrice de température actuelle
+                # On met à jour l'image avec la nouvelle matrice de température
                 temp_data = self.controlleur.T 
                 im.set_data(temp_data)
                 
-                # Dessiner l'actuateur et la perturbation
+                # On dessine l'actuateur et la perturbation
                 if self.controlleur.var_afficher_actuateur.get():
                     i, j = params['pos_ac']
                     nx, ny = params['nx_ac'], params['ny_ac']
@@ -516,9 +516,9 @@ class FenêtreAnimations:
                    
                 else:                                                                             # Si l'utilisateur désactive l'animation (il ne veut pas d'animation, mais juste les résultats)
                     iterations = self.controlleur.var_Nt                                          # On fait toutes les itérations de la simulation en une seule frame !
-                    if not self._message_shown:                                                   #Pour éviter que l'utilisateur pense que la simulation soit dysfonctionnelle , on lui affiche un message pour dire que la simulation est en cours
-                        messagebox.showinfo('Information', 'Simulation en cours ... Veuillez patienter')
-                        self._message_shown = True
+                                                                       #Pour éviter que l'utilisateur pense que la simulation soit dysfonctionnelle , on lui affiche un message pour dire que la simulation est en cours
+                    messagebox.showinfo('Information', 'Simulation en cours ... Veuillez patienter')
+                        
                     
 
                 
