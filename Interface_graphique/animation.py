@@ -5,7 +5,7 @@ from matplotlib.figure import Figure
 import numpy as np
 import tkinter as tk
 from tkinter import ttk, messagebox
-
+import time
 
 class FenêtreAnimations:
     '''Cette classe correspond à la fenêtre de droite que l'utilisateur va voir en ouvrant l'interface. 
@@ -68,22 +68,20 @@ class FenêtreAnimations:
         # Figure de la carte 2D thermique
         self.fig_carte_2D_top = Figure(figsize=(6, 5), dpi=100)                 #Création d'une figure matplotlib.figure de (6,5) pouces avec une résolution de 100 points par pouce 
         self.ax_carte_2D_top = self.fig_carte_2D_top.add_subplot(111)           #Création du graphique 
+        self.ax_carte_2D_top.set_xlabel("Position Y")                       #On définit les axes
+        self.ax_carte_2D_top.set_ylabel("Position X")
+        self.ax_carte_2D_top.set_title("Simulation Thermique 2D")  
         self.canvas_carte_2D_top = FigureCanvasTkAgg(self.fig_carte_2D_top, master=self.fenêtre_top)           #La méthode FigureCanvasTkAgg permet d'intégrer des figures Matplotlib dans l'interface. Ici, on met cet objet dans fenêtre_top, donc pour la sous-fenêtre du haut 
-        
+    
+
         # On refait exactement la même chose pour les autres cartes thermiques
         self.fig_carte_3D_top = Figure(figsize=(6, 5), dpi=100)
         self.ax_carte_3D_top = self.fig_carte_3D_top.add_subplot(111, projection='3d')          #Ici on précise que c'est un graphique 3D qu'on veut
+        self.ax_carte_3D_top.set_xlabel("Position X")
+        self.ax_carte_3D_top.set_ylabel("Position Y")
+        self.ax_carte_3D_top.set_zlabel("Simulation Thermique 3D")
         self.canvas_carte_3D_top = FigureCanvasTkAgg(self.fig_carte_3D_top, master=self.fenêtre_top)
-
-        self.fig_carte_2D_bottom = Figure(figsize=(6, 5), dpi=100)
-        self.ax_carte_2D_bottom = self.fig_carte_2D_bottom.add_subplot(111)
-        self.canvas_carte_2D_bottom = FigureCanvasTkAgg(self.fig_carte_2D_bottom, master=self.fenêtre_bottom)
-        
-        self.fig_carte_3D_bottom = Figure(figsize=(6, 5), dpi=100)
-        self.ax_carte_3D_bottom = self.fig_carte_3D_bottom.add_subplot(111, projection='3d')
-        self.canvas_carte_3D_bottom = FigureCanvasTkAgg(self.fig_carte_3D_bottom, master=self.fenêtre_bottom)
-
-
+    
         
         # Figure pour le graphique d'évolution des températures
         self.fig_temp_top = Figure(figsize=(6, 5), dpi=100)
@@ -318,11 +316,7 @@ class FenêtreAnimations:
         if graph_top == "Carte Thermique 2D":
             self.animation_2D_démarrer(T, params, top=True)
         elif graph_top == "Carte Thermique 3D":
-            
-            self.animation_2D_démarrer(T, params, top=True)
-            self.canvas_carte_2D_top.get_tk_widget().pack_forget()
             self.animation_3D_démarrer(T, params, top=True)
-        
         if graph_bottom == "Évolution Température":
             self.graph_temp(top=False)
         elif graph_bottom == "Énergie Interne":
@@ -415,14 +409,11 @@ class FenêtreAnimations:
             fig = self.fig_carte_2D_top
             ax = self.ax_carte_2D_top
             canvas = self.canvas_carte_2D_top
-            anim_attr = 'animation1'
-            bc = 'bc_carte_2D_top'
         else:
             fig = self.fig_carte_2D_bottom
             ax = self.ax_carte_2D_bottom
             canvas = self.canvas_carte_2D_bottom
-            anim_attr = 'animation2'
-            bc = 'bc_carte_2D_bottom'
+            
 
         
             
@@ -451,8 +442,8 @@ class FenêtreAnimations:
             self.bc_carte_2D_bottom = colorbar
         
         ax.set_title("Simulation Thermique 2D")
-        ax.set_xlabel("Position X")
-        ax.set_ylabel("Position Y")
+        ax.set_xlabel("Position Y")
+        ax.set_ylabel("Position X")
         ax.plot(pos_t1y, pos_t1x, 'ro', markersize=5, label="Thermistance 1")
         ax.plot(pos_t2y, pos_t2x, 'go', markersize=5, label="Thermistance 2")
         ax.plot(pos_t3y, pos_t3x, 'bo', markersize=5, label="Thermistance Laser")
@@ -485,16 +476,18 @@ class FenêtreAnimations:
                 im.set_data(temp_data)
                 
                 # On dessine l'actuateur et la perturbation
-                if self.controlleur.var_afficher_actuateur.get():
+                if self.controlleur.var_afficher_actuateur.get() :
                     i, j = params['pos_ac']
                     nx, ny = params['nx_ac'], params['ny_ac']
-                    rect = plt.Rectangle((j - ny/2, i - nx/2), ny, nx, edgecolor='lime', facecolor='none', linewidth=2)
+                    rect = plt.Rectangle((j - ny/2-1, i - nx/2-1), ny+2, nx+2, edgecolor='lime', facecolor='none', linewidth=2)
+                    print(j - ny//2, i - nx//2)
+                    print(j - ny/2, i - nx/2)
                     ax.add_patch(rect)
                     
-                if self.controlleur.var_afficher_perturbation.get() and params['P_pert'] > 0:
+                if self.controlleur.var_afficher_perturbation.get() and float(self.controlleur.var_P_pert.get()) > 0:
                     k, l = params['pos_pert']
                     nx, ny = params['nx_pert'], params['ny_pert']
-                    rect = plt.Rectangle((l - ny/2, k - nx/2), ny, nx, edgecolor='cyan', facecolor='none', linewidth=2)
+                    rect = plt.Rectangle((l - ny/2-1, k - nx/2-1), ny+2, nx+2, edgecolor='cyan', facecolor='none', linewidth=2)
                     ax.add_patch(rect)
                 
             
@@ -517,8 +510,8 @@ class FenêtreAnimations:
                 else:                                                                             # Si l'utilisateur désactive l'animation (il ne veut pas d'animation, mais juste les résultats)
                     iterations = self.controlleur.var_Nt                                          # On fait toutes les itérations de la simulation en une seule frame !
                                                                        #Pour éviter que l'utilisateur pense que la simulation soit dysfonctionnelle , on lui affiche un message pour dire que la simulation est en cours
-                    messagebox.showinfo('Information', 'Simulation en cours ... Veuillez patienter')
-                        
+                    #messagebox.showinfo('Information', 'Simulation en cours ... Veuillez patienter')
+                    temps_debut = time.time()  
                     
 
                 
@@ -537,18 +530,34 @@ class FenêtreAnimations:
                     
                     temp1 = self.controlleur.T[pos_t1x, pos_t1y] 
                     temp2 = self.controlleur.T[pos_t2x, pos_t2y] 
-                    temp_laser = self.controlleur.T[pos_t3x, pos_t3y] 
+                    temp_laser = self.controlleur.T[pos_t3x, pos_t3y]
+                    commande_actuateur = self.controlleur.var_current.get()
+                    commande_perturbation = self.controlleur.var_P_pert.get()  
                     
                     self.controlleur.temp_therm_1.append(temp1)
                     self.controlleur.temp_therm_2.append(temp2)
                     self.controlleur.temp_therm_laser.append(temp_laser)
+                    self.controlleur.commande_ac.append(commande_actuateur)
+                    self.controlleur.commande_pert.append(commande_perturbation)
                     
                 
-                    E_current = params['p'] * params['cp'] * np.sum(self.controlleur.T) * params['vol']
+                    E_current = params['p'] * params['cp'] * np.sum(self.controlleur.T+237.15) * params['vol']
                     self.controlleur.energie_list.append(E_current)
                     
                     
                     self.controlleur.temps_courant += params['dt']
+                
+                if self.controlleur.animation_on.get() == 'Désactivée':
+                    temps_fin = time.time()
+                    temps_ecoule = temps_fin - temps_debut
+                    minutes = int(temps_ecoule // 60)
+                    secondes = int(temps_ecoule % 60)
+                    millisecondes = int((temps_ecoule % 1) * 1000)
+                    self.controlleur.label_chrono.config(text=f"{minutes:02d}:{secondes:02d}:{millisecondes:03d}")
+                    self.controlleur.temps_ecoule_total = temps_ecoule
+                
+
+
                 
                 # Mettre à jour les autres graphiques 
                 if self.controlleur.graphique_top_select.get() == "Évolution Température":
@@ -564,13 +573,13 @@ class FenêtreAnimations:
                 if self.controlleur.var_afficher_actuateur.get():
                     i, j = params['pos_ac']
                     nx, ny = params['nx_ac'], params['ny_ac']
-                    rect = plt.Rectangle((j - ny//2, i - nx//2), ny, nx, edgecolor='lime', facecolor='none', linewidth=2)
+                    rect = plt.Rectangle((j - ny/2-1, i - nx/2-1), ny+2, nx+2, edgecolor='lime', facecolor='none', linewidth=2)
                     ax.add_patch(rect)
                     
                 if self.controlleur.var_afficher_perturbation.get() and params['P_pert'] > 0:
                     k, l = params['pos_pert']
                     nx, ny = params['nx_pert'], params['ny_pert']
-                    rect = plt.Rectangle((l - ny//2, k - nx//2), ny, nx, edgecolor='cyan', facecolor='none', linewidth=2)
+                    rect = plt.Rectangle((l - ny/2-1, k - nx/2-1), ny+2, nx+2, edgecolor='cyan', facecolor='none', linewidth=2)
                     ax.add_patch(rect)
             
             # On remet à jour la matrice de température après les itération pour la prochaine frame
@@ -640,8 +649,8 @@ class FenêtreAnimations:
             self.bc_carte_3D_bottom = colorbar
         
         ax.set_title("Simulation Thermique 3D")
-        ax.set_xlabel("Position X (m)")
-        ax.set_ylabel("Position Y (m)")
+        ax.set_xlabel("Position Y (m)")
+        ax.set_ylabel("Position X (m)")
         ax.set_zlabel("Température (°C)")
         canvas.draw()
         
@@ -667,10 +676,13 @@ class FenêtreAnimations:
             if self.controlleur.simulation_paused:
                 return
             
-            if top:
-                iterations = max(1, int(100 * self.controlleur.var_vitesse_animation.get()))
-                #iterations = max(1, self.controlleur.var_Nt)
-                
+            if top or (not top and self.animation1 is None):
+                if self.controlleur.animation_on.get() == 'Activée':
+                    iterations = max(1, int(100 * self.controlleur.var_vitesse_animation.get()))  # À chaque Frame, le nombre d'itération par frame va dépendre de la sélection de l'utilisateur.  
+                else:  # Si l'utilisateur désactive l'animation (il ne veut pas d'animation, mais juste les résultats)
+                    iterations = self.controlleur.var_Nt  
+                    temps_debut = time.time()
+
                 for _ in range(iterations):
                     if self.controlleur.temps_courant >= params['temps_simulation']:
                         break
@@ -684,16 +696,58 @@ class FenêtreAnimations:
                     
                     temp1 = self.controlleur.T[pos_t1x, pos_t1y] 
                     temp2 = self.controlleur.T[pos_t2x, pos_t2y] 
-                    temp_laser = self.controlleur.T[pos_t3x, pos_t3y] 
+                    temp_laser = self.controlleur.T[pos_t3x, pos_t3y]
+                    commande_actuateur = self.controlleur.var_current.get()
+                    commande_perturbation = self.controlleur.var_P_pert.get()  
                     
                     self.controlleur.temp_therm_1.append(temp1)
                     self.controlleur.temp_therm_2.append(temp2)
                     self.controlleur.temp_therm_laser.append(temp_laser)
+                    self.controlleur.commande_ac.append(commande_actuateur)
+                    self.controlleur.commande_pert.append(commande_perturbation)
                     
-                    E_current = params['p'] * params['cp'] * np.sum(self.controlleur.T) * params['vol']
+                    
+                    E_current = params['p'] * params['cp'] * np.sum(self.controlleur.T+273.15) * params['vol']
                     self.controlleur.energie_list.append(E_current)
                     
                     self.controlleur.temps_courant += params['dt']
+
+                if self.controlleur.animation_on.get() == 'Désactivée':
+                    temps_fin = time.time()
+                    temps_ecoule = temps_fin - temps_debut
+                    minutes = int(temps_ecoule // 60)
+                    secondes = int(temps_ecoule % 60)
+                    millisecondes = int((temps_ecoule % 1) * 1000)
+                    self.controlleur.label_chrono.config(text=f"{minutes:02d}:{secondes:02d}:{millisecondes:03d}")
+                    self.controlleur.f_interface.update()  # Force la mise à jour de l'interface
+                    self.controlleur.temps_ecoule_total = temps_ecoule
+                    
+                    # Forcer la mise à jour du graphique 3D avec le résultat final
+                    ax.clear()
+                    Z = self.controlleur.T.T 
+                    vmin = Z.min()
+                    vmax = Z.max()
+                    surf = ax.plot_surface(X, Y, Z, cmap='hot', vmin=vmin, vmax=vmax, rstride=2, cstride=2, linewidth=0, antialiased=False)
+                    ax.set_title(f"Simulation Thermique 3D - Temps: {self.controlleur.temps_courant:.2f} s")
+                    ax.set_xlabel("Position X (m)")
+                    ax.set_ylabel("Position Y (m)")
+                    ax.set_zlabel("Température (°C)")
+                    
+                    for barre_color in fig.get_axes():
+                        if barre_color is not ax:
+                            barre_color.remove()
+                            
+                    cax = fig.add_axes([0.85, 0.1, 0.03, 0.8])
+                    colorbar = fig.colorbar(surf, cax=cax)
+                    colorbar.set_label('Température (°C)')
+                    
+                    if top:
+                        self.bc_carte_3D_top = colorbar
+                    else:
+                        self.bc_carte_3D_bottom = colorbar
+                        
+                    canvas.draw()  # Très important : force le rafraîchissement immédiat du canvas
+                    
                 
                 if self.controlleur.graphique_top_select.get() == "Évolution Température":
                     self.graph_temp(True)
@@ -704,39 +758,36 @@ class FenêtreAnimations:
                     self.graph_temp(False)
                 elif self.controlleur.graphique_bottom_selcet.get() == "Énergie Interne":
                     self.graph_energie(False)
-            
                 
+                ax.set_position([0.125, 0.1, 0.6, 0.8])
+                ax.clear()
+                Z = self.controlleur.T.T 
                 
-            ax.set_position([0.125, 0.1, 0.6, 0.8])
-            ax.clear()
-            Z = self.controlleur.T.T 
+                # Calculer les nouvelles limites d'échelle de couleur dynamiquement
+                vmin = Z.min()
+                vmax = Z.max()
+                
+                surf = ax.plot_surface(X, Y, Z, cmap='hot', vmin=vmin, vmax=vmax, rstride=2, cstride=2, linewidth=0, antialiased=False)
+                ax.set_title(f"Simulation Thermique 3D - Temps: {self.controlleur.temps_courant:.2f} s")
+                ax.set_xlabel("Position X (m)")
+                ax.set_ylabel("Position Y (m)")
+                ax.set_zlabel("Température (°C)")
             
-            # Calculer les nouvelles limites d'échelle de couleur dynamiquement
-            vmin = Z.min()
-            vmax = Z.max()
-            
-            surf = ax.plot_surface(X, Y, Z, cmap='hot', vmin=vmin, vmax=vmax, rstride=2, cstride=2, linewidth=0, antialiased=False)
-            ax.set_title(f"Simulation Thermique 3D - Temps: {self.controlleur.temps_courant:.2f} s")
-            ax.set_xlabel("Position X (m)")
-            ax.set_ylabel("Position Y (m)")
-            ax.set_zlabel("Température (°C)")
-            
-            
-            for barre_color in fig.get_axes():
-                if barre_color is not ax:
-                    barre_color.remove()
+                for barre_color in fig.get_axes():
+                    if barre_color is not ax:
+                        barre_color.remove()
 
-            # Recréer une barre de couleur à position fixe
-            cax = fig.add_axes([0.85, 0.1, 0.03, 0.8])
-            colorbar = fig.colorbar(surf, cax=cax)
-            colorbar.set_label('Température (°C)')
+                # Recréer une barre de couleur à position fixe
+                cax = fig.add_axes([0.85, 0.1, 0.03, 0.8])
+                colorbar = fig.colorbar(surf, cax=cax)
+                colorbar.set_label('Température (°C)')
 
-            if top:
-                self.bc_carte_3D_top = colorbar
-            else:
-                self.bc_carte_3D_bottom = colorbar
-                    
-            return surf
+                if top:
+                    self.bc_carte_3D_top = colorbar
+                else:
+                    self.bc_carte_3D_bottom = colorbar
+                        
+                return surf
         
         # Créer l'animation
         anim = FuncAnimation(fig, update, frames=None, interval=50, blit=False, cache_frame_data=False)

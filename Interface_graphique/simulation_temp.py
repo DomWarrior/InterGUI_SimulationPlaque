@@ -38,8 +38,7 @@ class TempératurePlaque:
         pos_ac = params['pos_ac']                   #position du centre de l'actuateur sur la plaque
         nx_ac = params['nx_ac']                     #largeur de l'actuateur en x (mm)
         ny_ac = params['ny_ac']                     #largeur de l'actuateur en y (mm)
-        P_ac = params['P_ac']                       #Puissance électrique injecté dans l'actuateur (pas la puissance thermique injectée dans la plaque (P_thermique = couplage*P_ac))
-
+                           
         pos_pert = params['pos_pert']               #largeur de l'actuateur en x (mm)
         nx_pert = params['nx_pert']                 #largeur de la perturbation appliquée en x (mm)
         ny_pert = params['ny_pert']                 #largeur de la perturbation appliquée en y (mm)
@@ -116,8 +115,4 @@ class TempératurePlaque:
                 T_new[k_min:k_max, l_min:l_max] += (P_par_element*dt)/(p*cp*vol)
 
         return T_new
-
-
-
-
 
