@@ -498,7 +498,7 @@ class FenêtreAnimations:
             
             # Si la simulation est en cours, alors on poursouit l'animation.
         
-            if self.controlleur.animation_on.get() == 'Activée':                                                                            # Si l'utilisateur active l'animation (il veut voir l'évolution de la simulation au fur et à mesure)
+            if self.controlleur.animation_on.get() == 'Activé':                                                                            # Si l'utilisateur active l'animation (il veut voir l'évolution de la simulation au fur et à mesure)
                 
                 iterations = max(1, int(100 * self.controlleur.var_vitesse_animation.get()))                                                # On récupère à quelle vitesse il veut l'animation. Ici, à chaque Frame, le nombre d'itération par frame va dépendre de la sélection de l'utilisateur.  
                 
@@ -547,7 +547,7 @@ class FenêtreAnimations:
                 
                 self.controlleur.temps_courant += params['dt']                                                                             # On met à jour le temps courant de la simulation.                                                                           
             
-            if self.controlleur.animation_on.get() == 'Désactivée':                                                                        # Si l'utilisateur désactive l'animation, alors on met à jour le chronomètre de la simulation pour voir combien de temps la simulation a durée.                                
+            if self.controlleur.animation_on.get() == 'Désactivé':                                                                        # Si l'utilisateur désactive l'animation, alors on met à jour le chronomètre de la simulation pour voir combien de temps la simulation a durée.                                
                 temps_fin = time.time()
                 temps_ecoule = temps_fin - temps_debut
                 minutes = int(temps_ecoule // 60)
@@ -671,7 +671,7 @@ class FenêtreAnimations:
                 return
             
             if top or (not top and self.animation1 is None):
-                if self.controlleur.animation_on.get() == 'Activée':
+                if self.controlleur.animation_on.get() == 'Activé':
                     iterations = max(1, int(100 * self.controlleur.var_vitesse_animation.get())) 
                 else:  
                     iterations = self.controlleur.var_Nt  
@@ -706,7 +706,7 @@ class FenêtreAnimations:
                     
                     self.controlleur.temps_courant += params['dt']
 
-                if self.controlleur.animation_on.get() == 'Désactivée':
+                if self.controlleur.animation_on.get() == 'Désactivé':
                     temps_fin = time.time()
                     temps_ecoule = temps_fin - temps_debut
                     minutes = int(temps_ecoule // 60)

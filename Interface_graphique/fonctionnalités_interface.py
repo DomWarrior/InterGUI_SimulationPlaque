@@ -12,12 +12,21 @@ import json
 def charger_paramètres_json(fichier): # Fonction qui va permettre de lire un fichier json et de le charger
     with open(fichier, 'r') as f:
         return json.load(f)
-    #code d'erreur à rajouter si le fichier n'est pas un json
+
+
+
+
+
 
 
 def sauvegarder_paramètres_json(fichier, params): #Fonction qui va permettre d'écire dans un fichier json et de sauvegarder les paramètres
     with open(fichier, 'w') as f:
         json.dump(params, f, indent=2)
+
+
+
+
+
 
 
 def sauvegarder_résultats_txt(fichier,times,commande_actuateur, commande_perturbation, temp1, temp2, temp_laser, energy): #Fonction qui va enregistrer les résultats des températures aux différents points d'intérêts en fonction du temps dans un fichier txt
