@@ -67,6 +67,9 @@ class FenêtreInterface:
         self.creer_variables()                      #instance qui va créer les variables
         self.creer_interface()                      #instance qui va créer l'interface
 
+        self.temps_debut_chrono = None
+        self.temps_ecoule_total = 0
+        self.chronometre_run = False
 
 
 
@@ -414,7 +417,7 @@ class FenêtreInterface:
         speeds_frame.grid(row=1, column=2, padx=5, pady=2, sticky=tk.W)
 
 
-        for indice, speed in enumerate([1, 10, 100]):
+        for indice, speed in enumerate([1, 10, 50]):
             if indice == 0:
                 btn = ttk.Button(speeds_frame, text=f"Lente", 
                         command=lambda s=speed: self.var_vitesse_animation.set(s), 
@@ -595,7 +598,7 @@ class FenêtreInterface:
                 f"Le critère de stabilité est de {stabilité:.4f}, ce qui est supérieur à 0.5. "
             )
         
-        return {                                                #on retourne un dictionnaire qui va contenir toutes les variables (et leur valeur) utile pour la simulation de la tempérture dans la plaque
+        return {                                                #on retourne un dictionnaire qui va contenir toutes les variables (et leur valeur) utile pour la simulation de la tempérture dans la plaque. Cela va permettre simplement la récupération de ces variables via un appel de la fonction
             'k': k, 'p': p, 'cp': cp,
             'Lx': Lx, 'Ly': Ly, 'e': e,
             'T_air': T_air, 'h': h,
@@ -917,7 +920,7 @@ class FenêtreInterface:
 
 
     def démarrer_chronometre(self):
-        if not hasattr(self, 'temps_debut_chrono'):
+        if self.temps_debut_chrono is None:
             self.temps_debut_chrono = time.time()
             self.temps_ecoule_total = 0
         elif not self.chronometre_run:

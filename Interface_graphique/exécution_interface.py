@@ -1,7 +1,12 @@
 import tkinter as tk
 from interface import FenêtreInterface
 
+'''
+Ce fichier exécute l'interface graphique de l'application.
+Il importe la classe FenêtreInterface du fichier interface.py et crée une instance de cette classe.
+Il démarre ensuite la boucle principale de tkinter pour afficher l'interface en continu.
 
+'''
 def main():
     interface = tk.Tk()
     app = FenêtreInterface(interface)       # Création d'une instance de la classe            
