@@ -297,10 +297,10 @@ class FenêtreInterface:
         frame = ttk.Frame(self.page_dimensions)
         frame.pack(fill=tk.X, padx=10, pady=5)
         
-        ttk.Label(frame, text="Longueur (Lx, m):").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(frame, text="Largeur (Lx, m):").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_Lx, width=10).grid(row=0, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Largeur (Ly, m):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(frame, text="Longueur (Ly, m):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_Ly, width=10).grid(row=1, column=1, padx=5, pady=2)
         
         ttk.Label(frame, text="Épaisseur (e, m):").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
@@ -407,7 +407,7 @@ class FenêtreInterface:
 
         '''
 
-        self.creation_frame(self.page_simulation, "Paramètres de simulation")
+        self.creation_frame(self.page_simulation, "Paramètres temporels de la simulation")
         
         frame = ttk.Frame(self.page_simulation)
         frame.pack(fill=tk.X, padx=10, pady=5)
@@ -448,22 +448,20 @@ class FenêtreInterface:
 
         
 
-        
+    
+
+
+
+        # Options d'affichage Graphique du haut
+        self.creation_frame(self.page_simulation, "Options d'affichage")       
+
         frame = ttk.Frame(self.page_simulation)
         frame.pack(fill=tk.X, padx=10, pady=5)
         
         ttk.Checkbutton(frame, text="Afficher l'actuateur", variable=self.var_afficher_actuateur).grid(                     #Checkbutton est un autre widget tkinter qui permet d'enregistrer une valeur booléenne (True ou False) dans une variable tkinter.
             row=0, column=0, sticky=tk.W, padx=5, pady=2)                                                       
         ttk.Checkbutton(frame, text="Afficher la perturbation", variable=self.var_afficher_perturbation).grid(
-            row=1, column=0, sticky=tk.W, padx=5, pady=2)
-        
-
-
-
-
-
-        # Options d'affichage Graphique du haut
-        self.creation_frame(self.page_simulation, "Options d'affichage")               
+            row=1, column=0, sticky=tk.W, padx=5, pady=2)        
     
         frame = ttk.Frame(self.page_simulation)
         frame.pack(fill=tk.X, padx=10, pady=5)

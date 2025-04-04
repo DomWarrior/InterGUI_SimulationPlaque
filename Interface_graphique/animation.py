@@ -240,7 +240,7 @@ class FenêtreAnimations:
         
         ax.plot(times, temp1, 'r-', label='Thermistance 1')                                             #Courbe thermistance 1
         ax.plot(times, temp2, 'g--', label='Thermistance 2')                                            #Courbe thermistance 2
-        ax.plot(times, temp_laser, 'b-.', label='Thermistance Laser')                                   #Courbe thermistance 3
+        ax.plot(times, temp_laser, 'b-.', label='Thermistance 3')                                   #Courbe thermistance 3
         
         ax.set_xlabel("Temps (s)")
         ax.set_ylabel("Température (°C)")
@@ -441,9 +441,9 @@ class FenêtreAnimations:
         ax.set_title("Simulation Thermique 2D")                                                                     # Comme on a vidé le graphique, il faut redéfinir le cadre du graphique.
         ax.set_xlabel("Position Y")
         ax.set_ylabel("Position X")
-        ax.plot(pos_t1y, pos_t1x, 'ro', markersize=5, label="Thermistance 1")                                       # Ici, on offre la possibilité à l'utilisateur d'afficher sur la carte la position des thermistance via des points de couleur.
+        ax.plot(pos_t1y, pos_t1x, 'yo', markersize=5, label="Thermistance 1")                                       # Ici, on offre la possibilité à l'utilisateur d'afficher sur la carte la position des thermistance via des points de couleur.
         ax.plot(pos_t2y, pos_t2x, 'go', markersize=5, label="Thermistance 2")
-        ax.plot(pos_t3y, pos_t3x, 'bo', markersize=5, label="Thermistance Laser")
+        ax.plot(pos_t3y, pos_t3x, 'bo', markersize=5, label="Thermistance 3")
         ax.legend(loc='upper right')
         
 
@@ -474,16 +474,16 @@ class FenêtreAnimations:
                 carte_2D.set_data(temp_data)                                                                                                       # On met à jour l'image avec la matrice de température actuelle.
                 
                 # On dessine l'actuateur et la perturbation
-                if self.controlleur.var_afficher_actuateur.get() and float(self.controlleur.var_I_ac.get()) > 0:                             #Si l'utilisateur a coché la case pour afficher l'actuateur.                                
+                if self.controlleur.var_afficher_actuateur.get() :                             #Si l'utilisateur a coché la case pour afficher l'actuateur.                                
                     i, j = params['pos_ac']
                     nx, ny = params['nx_ac'], params['ny_ac']
                     rectangle_actu = plt.Rectangle((j - ny/2-1, i - nx/2-1), ny+2, nx+2, edgecolor='lime', facecolor='none', linewidth=2)    # On dessine un rectangle autour de l'actuateur.
                     ax.add_patch(rectangle_actu)                                                                                             # On ajoute le rectangle au graphique. La méthode add_patch() de matplotlib.pyplot permet d'ajouter un objet graphique sur la figure/graphique.                                                                                             
                     
-                if self.controlleur.var_afficher_perturbation.get() and float(self.controlleur.var_P_pert.get()) > 0:
+                if self.controlleur.var_afficher_perturbation.get():
                     k, l = params['pos_pert']
                     nx, ny = params['nx_pert'], params['ny_pert']
-                    rectangle_pert = plt.Rectangle((l - ny/2-1, k - nx/2-1), ny+2, nx+2, edgecolor='cyan', facecolor='none', linewidth=2)
+                    rectangle_pert = plt.Rectangle((l - ny/2-1, k - nx/2-1), ny+2, nx+2, edgecolor='purple', facecolor='none', linewidth=2)
                     ax.add_patch(rectangle_pert)
                 
             
@@ -574,10 +574,10 @@ class FenêtreAnimations:
                 rectangle_actu = plt.Rectangle((j - ny/2-1, i - nx/2-1), ny+2, nx+2, edgecolor='lime', facecolor='none', linewidth=2)
                 ax.add_patch(rectangle_actu)
                 
-            if self.controlleur.var_afficher_perturbation.get() and params['P_pert'] > 0:
+            if self.controlleur.var_afficher_perturbation.get():
                 k, l = params['pos_pert']
                 nx, ny = params['nx_pert'], params['ny_pert']
-                rectangle_pert = plt.Rectangle((l - ny/2-1, k - nx/2-1), ny+2, nx+2, edgecolor='cyan', facecolor='none', linewidth=2)
+                rectangle_pert = plt.Rectangle((l - ny/2-1, k - nx/2-1), ny+2, nx+2, edgecolor='purple', facecolor='none', linewidth=2)
                 ax.add_patch(rectangle_pert)
         
 
