@@ -18,7 +18,9 @@ class TempératurePlaque:
 
         temps_actuel = params.get('current_time', 0)        #variable qui a été rajouté lorsque j'ai voulu rajouter l'option d'activer l'actuateur ou la perturbation à un temps autre que t=0 pour l'interface graphique 
         t_ac = params.get('t_ac', 0)
+        t_ac_end = params.get('t_ac_end')         #t_ac_end est la fin de l'activation de l'actuateur (si on veut qu'il s'arrête à un moment donné)              
         t_pert = params.get('t_pert', 0)
+        t_pert_end = params.get('t_pert_end')
 
         #création des paramètres
         a=params['a']                               #diffusivité thermique
@@ -89,7 +91,7 @@ class TempératurePlaque:
 
 
         # Modélisation de l'actuateur comme une entrée/sortie d'énergie du système plaque
-        if current is not None and temps_actuel >= t_ac:       # ici on a rajouter temps_actuel afin de pouvoir activer la puissance après un temps t par rapport au début de la simulation 
+        if current is not None and t_ac < temps_actuel <= t_ac_end:       # ici on a rajouter temps_actuel afin de pouvoir activer la puissance après un temps t par rapport au début de la simulation 
             i, j = pos_ac                                   #on positionne le centre de l'actuateur sur la plaque où i est la coordonnée verticale (y) et j la coordonnée horiontale (x)
             i_min = max(0, i - nx_ac//2)
             i_max = min(T.shape[0], i + nx_ac//2+1)         #ici j'ai rajouter +1 pour prendre en compte la largeur impair de l'actuateur
@@ -102,7 +104,7 @@ class TempératurePlaque:
                 T_new[i_min:i_max, j_min:j_max] += (P_par_element*dt)/(p*cp*vol)
 
         # Modélisation de l'actuateur comme une entrée/sortie d'énergie du système plaque .... même modélisation que l'actuateur
-        if P_pert is not None and temps_actuel >= t_pert:
+        if P_pert is not None and t_pert < temps_actuel <= t_pert_end:
             k, l = pos_pert
             k_min = max(0, k - nx_pert//2)
             k_max = min(T.shape[0], k + nx_pert//2+1)

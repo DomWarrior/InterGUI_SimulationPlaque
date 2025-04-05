@@ -286,6 +286,9 @@ class FenêtreAnimations:
 
         '''
         try: 
+            # On regarde voir s'il y a des éléments positionnés en dehors de la matrice de température. 
+            # De plus ,on vérifie également si les temps sont cohérents entre eux.
+
             pos_ac_x = self.controlleur.var_pos_ac_x.get()
             pos_ac_y = self.controlleur.var_pos_ac_y.get()
             taille_ac_x = self.controlleur.var_nx_ac.get()
@@ -297,8 +300,12 @@ class FenêtreAnimations:
             taille_pert_y = self.controlleur.var_ny_pert.get()
             
             n_x = self.controlleur.var_n_x.get()
-            n_y = self.controlleur.var_n_y.get()                                                                                                        #Avant de lancer la simulation,on vérifie si l'utilisateur n'a pas positionné des éléments (position thermistances, actuateur ...) en dehors de la matrice de température.
+            n_y = self.controlleur.var_n_y.get()
+            
+           
             conditions = []
+            conditions2 = []
+
             conditions.append(0 <= self.controlleur.var_pos_pert_x.get() <= self.controlleur.var_n_x.get())          # On vérifie que la position en x (verticale) de la perturbation est bien comprise entre 0 et la taille de la matrice de température (n_x).
             conditions.append(0 <= self.controlleur.var_pos_ac_x.get() <= self.controlleur.var_n_x.get())            # ... position centre actuateur
             conditions.append(0 <= self.controlleur.var_pos_therm1x.get() <= self.controlleur.var_n_x.get())         # ... position en x thermistance 1
@@ -310,15 +317,26 @@ class FenêtreAnimations:
             conditions.append(0 <= self.controlleur.var_pos_therm1y.get() <= self.controlleur.var_n_y.get())         # ... position en y thermistance 1
             conditions.append(0 <= self.controlleur.var_pos_therm2y.get() <= self.controlleur.var_n_y.get())         # ... position en y thermistance 2
             conditions.append(0 <= self.controlleur.var_pos_therm3y.get() <= self.controlleur.var_n_y.get())         # ... position en y thermistance 3
-            conditions.append(0 <= pos_ac_x - taille_ac_x/2 <= n_x)
+            conditions.append(0 <= pos_ac_x - taille_ac_x/2 <= n_x)                                                  
             conditions.append(0 <= pos_ac_y - taille_ac_y/2 <= n_y)
             conditions.append(0 <= pos_ac_x + taille_ac_x/2 <= n_x)
             conditions.append(0 <= pos_ac_y + taille_ac_y/2 <= n_y)
-            
             conditions.append(0 <= pos_pert_x - taille_pert_x/2 <= n_x)
             conditions.append(0 <= pos_pert_y - taille_pert_y/2 <= n_y)
             conditions.append(0 <= pos_pert_x + taille_pert_x/2 <= n_x)
             conditions.append(0 <= pos_pert_y + taille_pert_y/2 <= n_y)
+
+            # Ici on regarde si les temps sont cohérents entre eux.
+            conditions2.append(self.controlleur.var_t_ac.get() >= 0)
+            conditions2.append(self.controlleur.var_t_pert.get() >= 0)
+            conditions2.append(self.controlleur.var_t_ac_end.get() >= 0)
+            conditions2.append(self.controlleur.var_t_pert_end.get() >= 0)
+            conditions2.append(self.controlleur.var_t_ac.get() <= self.controlleur.var_temps_simulation.get())
+            conditions2.append(self.controlleur.var_t_ac_end.get() <= self.controlleur.var_temps_simulation.get())
+            conditions2.append(self.controlleur.var_t_pert.get() <= self.controlleur.var_temps_simulation.get())
+            conditions2.append(self.controlleur.var_t_pert_end.get() <= self.controlleur.var_temps_simulation.get())
+            conditions2.append(self.controlleur.var_t_ac_end.get() >= self.controlleur.var_t_ac.get())
+            conditions2.append(self.controlleur.var_t_pert_end.get() >= self.controlleur.var_t_pert.get())
 
             if all(conditions):
                 pass
@@ -329,11 +347,19 @@ class FenêtreAnimations:
                    )
 
                 return
+            if all(conditions2):
+                pass
+            else:
+                messagebox.showinfo("Erreur de temps",
+                    "Les paramètres temporels de la simulation sont incohérents.\n\n"
+                    "Veuillez vérifier que tous les temps sont positifs, que les temps de début sont inférieurs aux temps de fin correspondants, et que tous les temps sont compris dans la durée totale de simulation."
+                )
+                return
         except (AttributeError):
                 pass
 
         
-        # On lance les simulations en fonction de la sélection de l'utilisateur.
+        # Si tout est correct, on lance les simulations en fonction de la sélection de l'utilisateur.
         if graph_top == "Carte Thermique 2D":          
             self.animation_2D_démarrer(T, params, top=True)
         elif graph_top == "Carte Thermique 3D":

@@ -140,12 +140,14 @@ class FenêtreInterface:
         self.var_current = tk.DoubleVar(value=0.5)                          #Courant injecté dans l'actuateur (A)
         self.var_temps_simulation = tk.DoubleVar(value=500)                 #temps total de la simulation (s)
         self.var_t_ac = tk.DoubleVar(value=0)                               #temps à lequel on veut appliquer le courant dans l'actuateur (s) 
+        self.var_t_ac_end = tk.DoubleVar(value=500)                         #temps à lequel on veut fermer le courant dans l'actuateur (s)
         self.var_pos_ac_x = tk.IntVar(value=30)                             #position verticale du centre de l'actuateur par rapport au bord supérieur de la plaque (vue du dessus)
         self.var_pos_ac_y = tk.IntVar(value=15)                             #position horizontale du centre de l'actuateur par rapport au bord gauche de la plaque (vue du dessus)
         self.var_nx_ac = tk.IntVar(value=15)                                # Dimension verticale en nombre d'éléments de matrice de l'actuateur 
         self.var_ny_ac = tk.IntVar(value=15)                                # Dimension horizontale en nombre d'éléments de matrice de l'actuateur 
         self.var_P_pert = tk.DoubleVar(value=0)                             #Puissance thermique de la perturbation
         self.var_t_pert = tk.DoubleVar(value=0)                             #temps à lequel on veut appliquer la perturbation
+        self.var_t_pert_end = tk.DoubleVar(value=500)                       #temps à lequel on veut fermer la perturbation
         self.var_pos_pert_x = tk.IntVar(value=30)                           #position horizontale du centre de la perturbation par rapport au bord supérieur de la plaque (vue du dessus)
         self.var_pos_pert_y = tk.IntVar(value=35)                           #position horizontale du centre de la perturbation par rapport au bord gauche de la plaque (vue du dessus)
         self.var_nx_pert = tk.IntVar(value=3)                               # Dimension verticale en nombre d'éléments de matrice de la perturbation (1 élément = 1mm)
@@ -257,7 +259,7 @@ class FenêtreInterface:
         ttk.Label(frame, text="Conductivité thermique (k, W/mK):").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)           #.grid() permet de placer le widget dans la frame (cadre) de la page params_physique. row et column définissent la position du widget dans la grille. sticky permet de définir l'alignement du widget (ici à gauche (W=West)). padx et pady permettent de définir l'espacement entre les widgets.
         ttk.Entry(frame, textvariable=self.var_k, width=10).grid(row=0, column=1, padx=5, pady=2)                               #ttk.Entry() permet de créer un champ de texte dans lequel l'utilisateur peut entrer une valeur. textvariable permet de lier le champ de texte à une variable tkinter (ici self.var_k). 
         
-        ttk.Label(frame, text="Densité (ρ, kg/m³):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(frame, text="Masse volumique (ρ, kg/m³):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_p, width=10).grid(row=1, column=1, padx=5, pady=2)
         
         ttk.Label(frame, text="Capacité calorifique (cp, J/kgK):").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
@@ -333,23 +335,26 @@ class FenêtreInterface:
         ttk.Label(frame, text="Courant injecté dans l'actuateur (A):").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_current, width=10).grid(row=0, column=1, padx=5, pady=2)
 
-        ttk.Label(frame, text="Moment d'allumage de la perturbation (s) :").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_t_ac, width=10).grid(row=1, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Couplage thermique (W/A):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_couplage, width=10).grid(row=1, column=1, padx=5, pady=2)
 
-        ttk.Label(frame, text="Couplage thermique ((W/A)):").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_couplage, width=10).grid(row=2, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Moment d'allumage de la perturbation (s) :").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_t_ac, width=10).grid(row=2, column=1, padx=5, pady=2)
+
+        ttk.Label(frame, text="Moment de fermeture de la perturbation (s) :").grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_t_ac_end, width=10).grid(row=3, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Position du centre en X:").grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_pos_ac_x, width=10).grid(row=3, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Position du centre en x:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_pos_ac_x, width=10).grid(row=4, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Position du centre en Y:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_pos_ac_y, width=10).grid(row=4, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Position du centre en y:").grid(row=5, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_pos_ac_y, width=10).grid(row=5, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Taille de l'actuateur en x :").grid(row=5, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_nx_ac, width=10).grid(row=5, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Taille de l'actuateur en x :").grid(row=6, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_nx_ac, width=10).grid(row=6, column=1, padx=5, pady=2)
     
-        ttk.Label(frame, text="Taille de l'actuateur en Y :").grid(row=6, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_ny_ac, width=10).grid(row=6, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Taille de l'actuateur en y :").grid(row=7, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_ny_ac, width=10).grid(row=7, column=1, padx=5, pady=2)
         
         self.creation_frame(self.page_actuation, "Perturbation thermique")
         
@@ -361,40 +366,43 @@ class FenêtreInterface:
 
         ttk.Label(frame, text="Moment d'allumage de la perturbation  (s):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_t_pert, width=10).grid(row=1, column=1, padx=5, pady=2)
+
+        ttk.Label(frame, text="Moment de fermeture de la perturbation  (s):").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_t_pert_end, width=10).grid(row=2, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Position de la perturbation en X:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_pos_pert_x, width=10).grid(row=2, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Position de la perturbation en x:").grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_pos_pert_x, width=10).grid(row=3, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Position de la perturbation Y:").grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_pos_pert_y, width=10).grid(row=3, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Position de la perturbation en y:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_pos_pert_y, width=10).grid(row=4, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Taille de la perturbation en X:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_nx_pert, width=10).grid(row=4, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Taille de la perturbation en x:").grid(row=5, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_nx_pert, width=10).grid(row=5, column=1, padx=5, pady=2)
         
-        ttk.Label(frame, text="Taille de la perturbation en Y:").grid(row=5, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(frame, textvariable=self.var_ny_pert, width=10).grid(row=5, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="Taille de la perturbation en y:").grid(row=6, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(frame, textvariable=self.var_ny_pert, width=10).grid(row=6, column=1, padx=5, pady=2)
 
         self.creation_frame(self.page_actuation, "Position des thermistances")
         
         frame = ttk.Frame(self.page_actuation)
         frame.pack(fill=tk.X, padx=10, pady=5)
         
-        ttk.Label(frame, text="Position en X thermistance 1 :").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(frame, text="Position en x thermistance 1 :").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_pos_therm1x, width=10).grid(row=0, column=3, padx=5, pady=2)
 
-        ttk.Label(frame, text="Position en Y thermistance 1 :").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(frame, text="Position en y thermistance 1 :").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_pos_therm1y, width=10).grid(row=1, column=3, padx=5, pady=2)
 
-        ttk.Label(frame, text="Position en X thermistance 2 :").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(frame, text="Position en x thermistance 2 :").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_pos_therm2x, width=10).grid(row=2, column=3, padx=5, pady=2)
         
-        ttk.Label(frame, text="Position en Y thermistance 2 :").grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(frame, text="Position en y thermistance 2 :").grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_pos_therm2y, width=10).grid(row=3, column=3, padx=5, pady=2)
         
-        ttk.Label(frame, text="Position en X thermistance 3 :").grid(row=4, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(frame, text="Position en x thermistance 3 :").grid(row=4, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_pos_therm3x, width=10).grid(row=4, column=3, padx=5, pady=2)
         
-        ttk.Label(frame, text="Position en Y thermistance 3 :").grid(row=5, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(frame, text="Position en y thermistance 3 :").grid(row=5, column=0, sticky=tk.W, padx=5, pady=2)
         ttk.Entry(frame, textvariable=self.var_pos_therm3y, width=10).grid(row=5, column=3, padx=5, pady=2)
 
 
@@ -582,6 +590,8 @@ class FenêtreInterface:
 
 
         t_ac = self.var_t_ac.get()
+        t_ac_end = self.var_t_ac_end.get()
+        t_pert_end = self.var_t_pert_end.get()
         t_pert = self.var_t_pert.get()
         
         # précalcul des paramètres utile pour la simulation de la température de la plaque 
@@ -613,7 +623,7 @@ class FenêtreInterface:
             'P_pert': P_pert, 'pos_pert': pos_pert, 'nx_pert': nx_pert, 'ny_pert': ny_pert,
             'dx': dx, 'dy': dy, 'dz': dz, 'vol': vol,
             'a': a, 'dt': dt, 'Nt': Nt, 'couplage':couplage,
-            't_ac': t_ac, 't_pert': t_pert ,
+            't_ac': t_ac,'t_ac_end':t_ac_end, 't_pert': t_pert, 't_pert_end': t_pert_end,
             'pos_therm1x': pos_therm1x, 'pos_therm1y': pos_therm1y,
             'pos_therm2x': pos_therm2x,'pos_therm2y': pos_therm2y,
             'pos_therm3x': pos_therm3x,'pos_therm3y': pos_therm3y,
@@ -795,6 +805,8 @@ class FenêtreInterface:
             self.var_nx_pert.set(params["simulation"]["nx_pert"])
             self.var_ny_pert.set(params["simulation"]["ny_pert"])
             self.var_couplage.set(params["simulation"]["couplage"])
+            self.var_t_ac_end.set(params["simulation"]["t_ac_end"])
+            self.var_t_pert_end.set(params["simulation"]["t_pert_end"])
 
 
             #Thermistances 
@@ -860,11 +872,13 @@ class FenêtreInterface:
                     "temps_simulation": self.var_temps_simulation.get(),
                     "I_ac":self.var_current.get(),
                     "t_ac": self.var_t_ac.get(),
+                    "t_ac_end": self.var_t_ac_end.get(),
                     "pos_ac": [self.var_pos_ac_x.get(),self.var_pos_ac_y.get()],
                     "nx_ac": self.var_nx_ac.get(),
                     "ny_ac": self.var_ny_ac.get(),
                     "P_pert": self.var_P_pert.get(),
                     "t_pert": self.var_t_pert.get(),
+                    "t_pert_end": self.var_t_pert_end.get(),
                     "pos_pert": [self.var_pos_pert_x.get(),self.var_pos_pert_y.get()],
                     "nx_pert": self.var_nx_pert.get(),
                     "ny_pert": self.var_ny_pert.get(),
