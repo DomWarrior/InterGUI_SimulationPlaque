@@ -51,8 +51,7 @@ class FenêtreInterface:
 
         self.f_interface = f_interface                                                  #création d'une instance qui va représenter la fenêtre principal de l'interface graphique (Tkinter)
         self.f_interface.title("Simulation Thermique de la plaque")                     #Titre de la fenêtre Tkinter                                                        
-        self.f_interface.geometry("1280x800")                                           #Taille initiale de la fenêtre lorsque l'utilisateur va lancer l'interface
-
+        self.f_interface.state('zoomed')                                                #La taille initale de la fenêtre correspondra au plein écran de l'ordinateur
 
         self.simulation_thermique = TempératurePlaque()                                 # on crée une instance qui va contenir la fonction qui modélise l'évolution de la température dans la plaque présent dans le fichier simulation.py 
         

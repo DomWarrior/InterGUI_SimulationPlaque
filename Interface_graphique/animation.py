@@ -285,7 +285,19 @@ class FenêtreAnimations:
         Cette méthode va lancer les animations des graphiques en fonction de la sélection de l'utilisateur.
 
         '''
-        try:                                                                                                         #Avant de lancer la simulation,on vérifie si l'utilisateur n'a pas positionné des éléments (position thermistances, actuateur ...) en dehors de la matrice de température.
+        try: 
+            pos_ac_x = self.controlleur.var_pos_ac_x.get()
+            pos_ac_y = self.controlleur.var_pos_ac_y.get()
+            taille_ac_x = self.controlleur.var_nx_ac.get()
+            taille_ac_y = self.controlleur.var_ny_ac.get()
+            
+            pos_pert_x = self.controlleur.var_pos_pert_x.get()
+            pos_pert_y = self.controlleur.var_pos_pert_y.get()
+            taille_pert_x = self.controlleur.var_nx_pert.get()
+            taille_pert_y = self.controlleur.var_ny_pert.get()
+            
+            n_x = self.controlleur.var_n_x.get()
+            n_y = self.controlleur.var_n_y.get()                                                                                                        #Avant de lancer la simulation,on vérifie si l'utilisateur n'a pas positionné des éléments (position thermistances, actuateur ...) en dehors de la matrice de température.
             conditions = []
             conditions.append(0 <= self.controlleur.var_pos_pert_x.get() <= self.controlleur.var_n_x.get())          # On vérifie que la position en x (verticale) de la perturbation est bien comprise entre 0 et la taille de la matrice de température (n_x).
             conditions.append(0 <= self.controlleur.var_pos_ac_x.get() <= self.controlleur.var_n_x.get())            # ... position centre actuateur
@@ -298,14 +310,25 @@ class FenêtreAnimations:
             conditions.append(0 <= self.controlleur.var_pos_therm1y.get() <= self.controlleur.var_n_y.get())         # ... position en y thermistance 1
             conditions.append(0 <= self.controlleur.var_pos_therm2y.get() <= self.controlleur.var_n_y.get())         # ... position en y thermistance 2
             conditions.append(0 <= self.controlleur.var_pos_therm3y.get() <= self.controlleur.var_n_y.get())         # ... position en y thermistance 3
-        
+            conditions.append(0 <= pos_ac_x - taille_ac_x/2 <= n_x)
+            conditions.append(0 <= pos_ac_y - taille_ac_y/2 <= n_y)
+            conditions.append(0 <= pos_ac_x + taille_ac_x/2 <= n_x)
+            conditions.append(0 <= pos_ac_y + taille_ac_y/2 <= n_y)
+            
+            conditions.append(0 <= pos_pert_x - taille_pert_x/2 <= n_x)
+            conditions.append(0 <= pos_pert_y - taille_pert_y/2 <= n_y)
+            conditions.append(0 <= pos_pert_x + taille_pert_x/2 <= n_x)
+            conditions.append(0 <= pos_pert_y + taille_pert_y/2 <= n_y)
+
             if all(conditions):
                 pass
             else:
                 messagebox.showinfo("Erreur de positionnement", 
                    "Certaines positions sont en dehors des limites permises.\n\n"
                    "Veuillez vérifier que toutes les coordonnées sont comprises entre 0 et les dimensions maximales du système (n_x , n_y) "
-                   ) 
+                   )
+
+                return
         except (AttributeError):
                 pass
 
@@ -349,8 +372,6 @@ class FenêtreAnimations:
        
         params = self.controlleur.recup_params_sim()                                                    #Avant de relancer a simulation, on s'assurer de récupérer tous les paramètres. Cela va nous permettre de récolter les paramètres potentiellement modifiés par l'utilisateur. Il est important de rappeler que cette méthode est une méthode  définie dans la classe FenetreInterface de interface.py. dont self.controlleur est un objet.
         current_T = self.controlleur.T                                                                  # On récupère la matrice de température au temps où la simulation a été mise sur pause.
-        
-        
         graph_top = self.controlleur.graphique_top_select.get()   
         graph_bottom = self.controlleur.graphique_bottom_selcet.get()
         
