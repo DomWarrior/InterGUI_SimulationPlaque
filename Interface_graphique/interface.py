@@ -870,7 +870,7 @@ class FenêtreInterface:
                 },
                 "simulation":{
                     "temps_simulation": self.var_temps_simulation.get(),
-                    "I_ac":self.var_current.get(),
+                    "I_ac":self.var_current.get(),                                      
                     "t_ac": self.var_t_ac.get(),
                     "t_ac_end": self.var_t_ac_end.get(),
                     "pos_ac": [self.var_pos_ac_x.get(),self.var_pos_ac_y.get()],

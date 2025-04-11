@@ -10,8 +10,8 @@ import time
 class FenêtreAnimations:
     '''
     Cette classe va gérer l'animation des graphiques de l'interface graphique (carte thermique 2D et 3D, évolution température thermistances et énergie interne).
-    Elle va permettre de créer les graphiques, de les mettre à jour et de gérer les animations.
-    Elle va aussi gérer les événements de l'interface graphique liés aux graphiques (Lancer , Arrêter, Mettre sur pause , Sauvegarder , Charger ...).
+    Elle va aussi permettre de créer les graphiques, de les mettre à jour et de gérer les animations en interaction avec le fichier interface.py.
+    Aussi, elle gérer les événements de l'interface graphique liés aux graphiques (Lancer , Arrêter, Mettre sur pause , Sauvegarder , Charger ...).
     Cette classe va également gérer les chronomètres de la simulation, ainsi que les messages d'erreur. 
     '''
 
@@ -22,8 +22,7 @@ class FenêtreAnimations:
 
         '''
         Cette méthode va créer la sous-fenêtre de l'interface graphique qui va contenir les graphiques de la simulation thermique.
-        Elle va aussi initialiser l'état de certaines variables qui seront menés à évoluer.
-        Elle initialise également le chronomètre de la simulation.
+        Elle va aussi initialiser l'état de certaines variables qui seront menées à évoluer et elle va initialiser le chronomètre de la simulation.
         '''
 
 
@@ -236,7 +235,7 @@ class FenêtreAnimations:
         temp1 = self.controlleur.temp_therm_1[::step]                                                   # On prend 1 point à chaque saut           
         temp2 = self.controlleur.temp_therm_2[::step]
         temp_laser = self.controlleur.temp_therm_laser[::step]
-        times = [i * 0.001 for i in range(0, len(self.controlleur.temp_therm_1), step)]                 # Pour avoir une correspondance entre le temps et la température, on ajuster une vecteur temps en conséquence. Ici, 0.001 est en réalité la pas de temps de la simulation (dt).Comme on ne propose pas d'ajuster le pas de temps, alors on peut se permettre de directement prendre le pas de temps de 0.001s.
+        times = [i * 0.001 for i in range(0, len(self.controlleur.temp_therm_1), step)]                 # Pour avoir une correspondance entre le temps et la température, on ajuste un vecteur temps en conséquence. Ici, 0.001 est en réalité la pas de temps de la simulation (dt).Comme on ne propose pas d'ajuster le pas de temps, alors on peut se permettre de directement prendre le pas de temps de 0.001s.
         
         ax.plot(times, temp1, 'r-', label='Thermistance 1')                                             #Courbe thermistance 1
         ax.plot(times, temp2, 'g--', label='Thermistance 2')                                            #Courbe thermistance 2
@@ -439,13 +438,18 @@ class FenêtreAnimations:
 
 
         
-        # On récupère d'abord les positions des thermistances.
+        # On récupère d'abord les positions des thermistances et les temps d'application des puissances. Cela va nous servir plus tard dans le code
         pos_t1x = self.controlleur.var_pos_therm1x.get() 
         pos_t1y = self.controlleur.var_pos_therm1y.get() 
         pos_t2x = self.controlleur.var_pos_therm2x.get() 
         pos_t2y = self.controlleur.var_pos_therm2y.get() 
         pos_t3x = self.controlleur.var_pos_therm3x.get() 
         pos_t3y = self.controlleur.var_pos_therm3y.get() 
+        t_ac = params.get('t_ac')
+        t_ac_end = params.get('t_ac_end', params['temps_simulation'])
+        t_pert = params.get('t_pert')
+        t_pert_end = params.get('t_pert_end', params['temps_simulation'])
+
 
 
         
@@ -575,8 +579,19 @@ class FenêtreAnimations:
                 temp1 = self.controlleur.T[pos_t1x, pos_t1y]                                                                               # Température thermistance 1
                 temp2 = self.controlleur.T[pos_t2x, pos_t2y]                                                                               # Température thermistance 2                                         
                 temp_laser = self.controlleur.T[pos_t3x, pos_t3y]                                                                          # Température thermistance 3                                
-                commande_actuateur = self.controlleur.var_current.get()                                                                    # Commande de l'actuateur (courant)
-                commande_perturbation = self.controlleur.var_P_pert.get()                                                                  # Commande de la perturbation (puissance)                        
+                
+                #Comme on veut récolter les commandes de l'actuateur et de la perturbation à chaque itération pour le fichier de sauvegarde, 
+                # on va devoir vérifier si la perturbation et l'actuateur sont activés à cet instant de la simulation et si oui aller récupérer la valeur
+                temps_actuel = self.controlleur.temps_courant
+                if t_ac <= temps_actuel <= t_ac_end:
+                    commande_actuateur = self.controlleur.var_current.get()
+                else:
+                    commande_actuateur = 0.0
+                if t_pert <= temps_actuel <= t_pert_end:
+                    commande_perturbation = self.controlleur.var_P_pert.get()
+                else:
+                    commande_perturbation = 0.0
+                                                                                                 
                 
 
                 # On ajout ces valeurs dans les listes de la classe FenetreInterface
@@ -662,6 +677,10 @@ class FenêtreAnimations:
         pos_t2y = self.controlleur.var_pos_therm2y.get() 
         pos_t3x = self.controlleur.var_pos_therm3x.get() 
         pos_t3y = self.controlleur.var_pos_therm3y.get()
+        t_ac = params.get('t_ac', 0)
+        t_ac_end = params.get('t_ac_end', params['temps_simulation'])
+        t_pert = params.get('t_pert', 0)
+        t_pert_end = params.get('t_pert_end', params['temps_simulation'])
 
         
         fig = self.figure_carte_3D
@@ -738,8 +757,18 @@ class FenêtreAnimations:
                     temp1 = self.controlleur.T[pos_t1x, pos_t1y] 
                     temp2 = self.controlleur.T[pos_t2x, pos_t2y] 
                     temp_laser = self.controlleur.T[pos_t3x, pos_t3y]
-                    commande_actuateur = self.controlleur.var_current.get()
-                    commande_perturbation = self.controlleur.var_P_pert.get()  
+
+                    temps_actuel = self.controlleur.temps_courant
+            
+                    if t_ac <= temps_actuel <= t_ac_end:
+                        commande_actuateur = self.controlleur.var_current.get()
+                    else:
+                        commande_actuateur = 0.0
+
+                    if t_pert <= temps_actuel <= t_pert_end:
+                        commande_perturbation = self.controlleur.var_P_pert.get()
+                    else:
+                        commande_perturbation = 0.0
                     
                     self.controlleur.temp_therm_1.append(temp1)
                     self.controlleur.temp_therm_2.append(temp2)

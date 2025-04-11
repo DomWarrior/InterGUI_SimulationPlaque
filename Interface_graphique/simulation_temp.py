@@ -91,7 +91,7 @@ class TempératurePlaque:
 
 
         # Modélisation de l'actuateur comme une entrée/sortie d'énergie du système plaque
-        if current is not None and t_ac < temps_actuel <= t_ac_end:       # ici on a rajouter temps_actuel afin de pouvoir activer la puissance après un temps t par rapport au début de la simulation 
+        if current is not None and t_ac <= temps_actuel <= t_ac_end:       # ici on a rajouter temps_actuel afin de pouvoir activer la puissance après un temps t par rapport au début de la simulation 
             i, j = pos_ac                                   #on positionne le centre de l'actuateur sur la plaque où i est la coordonnée verticale (y) et j la coordonnée horiontale (x)
             i_min = max(0, i - nx_ac//2)
             i_max = min(T.shape[0], i + nx_ac//2+1)         #ici j'ai rajouter +1 pour prendre en compte la largeur impair de l'actuateur
@@ -104,7 +104,7 @@ class TempératurePlaque:
                 T_new[i_min:i_max, j_min:j_max] += (P_par_element*dt)/(p*cp*vol)
 
         # Modélisation de l'actuateur comme une entrée/sortie d'énergie du système plaque .... même modélisation que l'actuateur
-        if P_pert is not None and t_pert < temps_actuel <= t_pert_end:
+        if P_pert is not None and t_pert <= temps_actuel <= t_pert_end:
             k, l = pos_pert
             k_min = max(0, k - nx_pert//2)
             k_max = min(T.shape[0], k + nx_pert//2+1)
